@@ -2,7 +2,9 @@ import os
 import shutil
 import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, abort, Response
-from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
+from forms import LoginForm, RegistrationForm, ForgotPasswordForm  # and any other forms you need
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -18,15 +20,81 @@ import tempfile
 import io
 import base64
 from io import BytesIO
+from flask_cors import CORS
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
+from routes import debug
 import qrcode.image.svg
 from sqlalchemy import func, and_, or_, not_, desc
 from sqlalchemy.orm import joinedload
+from models import User, db, Card, UserCard, Pack  # Import models from models.py
 
 # Initialize extensions
-db = SQLAlchemy()
 login_manager = LoginManager()
+
+def create_admin():
+    """Создает администратора"""
+    try:
+        # First, create all tables if they don't exist
+        db.create_all()
+        print('Database tables created/verified.')
+        
+        # Use direct SQL to check for admin user to avoid ORM issues
+        from sqlalchemy import text
+        
+        # Check if admin exists by username
+        result = db.session.execute(
+            text("SELECT id FROM user WHERE username = 'admin'")
+        ).fetchone()
+        
+        if not result:
+            # If no admin user exists, create one with raw SQL to avoid ORM issues
+            try:
+                db.session.execute(
+                    text("""
+                    INSERT INTO user (username, email, password_hash, is_admin, coins, points, avatar)
+                    VALUES ('admin', 'admin@example.com', :pwhash, 1, 1000, 0, 'default.png')
+                    """),
+                    {'pwhash': 'pbkdf2:sha256:260000$N2Q4YzYzYjUwMDAw$...'}  # This should be a proper hash
+                )
+                db.session.commit()
+                print('Admin user created successfully with SQL!')
+            except Exception as e:
+                print(f'Error creating admin with SQL: {e}')
+                db.session.rollback()
+                raise
+        else:
+            # Make sure the admin has the correct privileges
+            try:
+                db.session.execute(
+                    text("""
+                    UPDATE user 
+                    SET email = 'admin@example.com', 
+                        is_admin = 1,
+                        username = 'admin'
+                    WHERE username = 'admin' OR email = 'admin@example.com'
+                    """)
+                )
+                db.session.commit()
+                print('Admin user verified and updated if needed.')
+            except Exception as e:
+                print(f'Error updating admin user: {e}')
+                db.session.rollback()
+                raise
+                
+    except Exception as e:
+        print(f"Error in create_admin: {str(e)}")
+        # If there's still an error, drop and recreate all tables
+        try:
+            print('Attempting to reset database...')
+            db.drop_all()
+            db.create_all()
+            print('Database reset. Please restart the application.')
+        except Exception as e2:
+            print(f'Fatal error resetting database: {e2}')
+        # Exit to prevent further errors
+        import sys
+        sys.exit(1)
 
 def create_app():
     # Initialize Flask app
@@ -359,26 +427,33 @@ def register():
         return redirect(url_for('login'))
         
     return render_template('auth/register.html', form=form)
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
     
     form = LoginForm()
-        
+    
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
+        print(f"Попытка входа для пользователя: {form.username.data}")
+        print(f"Найден пользователь: {user}")
         
-        if not user or not user.check_password(form.password.data):
+        if user:
+            print(f"Проверка пароля для пользователя: {user.username}")
+            print(f"Хеш пароля: {user.password_hash}")
+            print(f"Проверка пароля: {check_password_hash(user.password_hash, form.password.data)}")
+        
+        if user and check_password_hash(user.password_hash, form.password.data):
+            login_user(user, remember=form.remember.data)
+            print(f"Пользователь {user.username} успешно аутентифицирован")
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('dashboard'))
+        else:
+            print("Ошибка аутентификации")
             flash('Неверное имя пользователя или пароль', 'danger')
-            return redirect(url_for('login'))
-            
-        login_user(user, remember=form.remember.data)
-        return redirect(url_for('dashboard'))
-        
-    return render_template('auth/login.html', form=form)
-
+    
+    return render_template('auth/login.html', title='Вход', form=form)
 @app.route('/logout')
 @login_required
 def logout():
@@ -1013,6 +1088,55 @@ def admin_users():
     users = User.query.order_by(User.username).all()
     return render_template('admin/users.html', users=users)
 
+# Новый маршрут для удаления карточек с прямым доступом (для отладки)
+@app.route('/admin/delete_card_direct/<int:card_id>', methods=['GET'])
+@login_required
+def delete_card_direct(card_id):
+    app.logger.debug(f"Route delete_card_direct called with card_id: {card_id}")
+    print("\n\n=== ФУНКЦИЯ delete_card_direct ВЫЗВАНА ===\n")
+    if not current_user.is_admin:
+        flash('У вас нет доступа к админ-панели', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        print(f"Начало прямого удаления карты {card_id}")
+        
+        # Получаем карту
+        card = Card.query.get_or_404(card_id)
+        print(f"Найдена карта: {card.name} (ID: {card.id})")
+        
+        # Проверяем, есть ли у пользователей эта карта
+        user_cards = UserCard.query.filter_by(card_id=card.id).all()
+        print(f"Найдено {len(user_cards)} экземпляров карты у пользователей")
+        
+        # Удаляем карты пользователей
+        for user_card in user_cards:
+            # Проверяем, не находится ли карта в команде
+            team = Team.query.filter_by(user_id=user_card.user_id).first()
+            if team:
+                for i in range(1, 6):
+                    slot_attr = f'slot{i}_card_id'
+                    if getattr(team, slot_attr) == user_card.id:
+                        setattr(team, slot_attr, None)
+                        break
+            # Удаляем карту пользователя
+            db.session.delete(user_card)
+        
+        # Удаляем саму карту
+        db.session.delete(card)
+        db.session.commit()
+        
+        print("Карта успешно удалена")
+        flash('Карта успешно удалена', 'success')
+        return redirect(url_for('admin_cards'))
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Ошибка при удалении карты: {str(e)}")
+        traceback.print_exc()
+        flash(f'Ошибка при удалении карты: {str(e)}', 'danger')
+        return redirect(url_for('admin_cards'))
+
 @app.route('/admin/cards/add', methods=['GET', 'POST'])
 @app.route('/admin/cards/edit/<int:card_id>', methods=['GET', 'POST'])
 @login_required
@@ -1055,10 +1179,6 @@ def add_card(card_id=None):
                 if not card.set_image_from_file(image_file):
                     flash('Ошибка при обработке изображения. Пожалуйста, попробуйте другое изображение.', 'danger')
                     return render_template('admin/add_card.html', card=card)
-                
-                # Keep the original filename for reference
-                filename = secure_filename(image_file.filename)
-                card.image = filename
 
             db.session.commit()
             flash(f'Карта "{card.name}" успешно сохранена!', 'success')
@@ -1350,47 +1470,6 @@ def save_file(file, folder='uploads'):
         
         return unique_filename
     return None
-
-# Функция для создания администратора
-def create_admin():
-    # Проверяем, существует ли уже администратор
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        admin = User(username='admin', email='admin@example.com')
-        admin.set_password('admin')
-        admin.is_admin = True
-        db.session.add(admin)
-        db.session.commit()
-        print('Admin user created successfully!')
-    else:
-        # Ensure the admin flag is set for the existing admin user
-        if not admin.is_admin:
-            admin.is_admin = True
-            db.session.commit()
-            print('Admin privileges added to existing user.')
-        else:
-            print('Admin user already exists.')
-
-
-
-def create_admin():
-    """Создает администратора"""
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        admin = User(username='admin', email='admin@example.com')
-        admin.set_password('admin')
-        admin.is_admin = True
-        db.session.add(admin)
-        db.session.commit()
-        print('Admin user created successfully!')
-    else:
-        # Ensure the admin flag is set for the existing admin user
-        if not admin.is_admin:
-            admin.is_admin = True
-            db.session.commit()
-            print('Admin privileges added to existing user.')
-        else:
-            print('Admin user already exists.')
 
 @app.cli.command('create-admin')
 def create_admin_command():
@@ -2193,53 +2272,7 @@ def perform_delete_card(card_id):
         flash(f'Ошибка при удалении карты: {str(e)}', 'danger')
         return redirect(url_for('admin_cards'))
 
-# Новый маршрут для удаления карточек с прямым доступом (для отладки)
-@app.route('/admin/delete_card_direct/<int:card_id>')
-@login_required
-def delete_card_direct(card_id):
-    print("\n\n=== ФУНКЦИЯ delete_card_direct ВЫЗВАНА ===\n")
-    if not current_user.is_admin:
-        flash('У вас нет доступа к админ-панели', 'danger')
-        return redirect(url_for('dashboard'))
-    
-    try:
-        print(f"Начало прямого удаления карты {card_id}")
-        
-        # Получаем карту
-        card = Card.query.get_or_404(card_id)
-        print(f"Найдена карта: {card.name} (ID: {card.id})")
-        
-        # Проверяем, есть ли у пользователей эта карта
-        user_cards = UserCard.query.filter_by(card_id=card.id).all()
-        print(f"Найдено {len(user_cards)} экземпляров карты у пользователей")
-        
-        # Удаляем карты пользователей
-        for user_card in user_cards:
-            # Проверяем, не находится ли карта в команде
-            team = Team.query.filter_by(user_id=user_card.user_id).first()
-            if team:
-                for i in range(1, 6):
-                    slot_attr = f'slot{i}_card_id'
-                    if getattr(team, slot_attr) == user_card.id:
-                        setattr(team, slot_attr, None)
-                        break
-            # Удаляем карту пользователя
-            db.session.delete(user_card)
-        
-        # Удаляем саму карту
-        db.session.delete(card)
-        db.session.commit()
-        
-        print("Карта успешно удалена")
-        flash('Карта успешно удалена', 'success')
-        return redirect(url_for('admin_cards'))
-    
-    except Exception as e:
-        db.session.rollback()
-        print(f"Ошибка при удалении карты: {str(e)}")
-        traceback.print_exc()
-        flash(f'Ошибка при удалении карты: {str(e)}', 'danger')
-        return redirect(url_for('admin_cards'))
+
 
 
 # Маршрут для страницы удаления карточек
@@ -2296,7 +2329,26 @@ register_notifications_routes(app)
 # Регистрируем маршруты для турниров
 register_tournaments_routes(app)
 
+# Print all registered routes for debugging
+with app.app_context():
+    print("\n=== REGISTERED ROUTES ===")
+    for rule in app.url_map.iter_rules():
+        print(f"{rule.endpoint}: {rule.rule} {list(rule.methods)}")
+    print("======================\n")
+
 if __name__ == '__main__':
     with app.app_context():
+        # Create all database tables first
         db.create_all()
+        
+        # Create admin user
+        create_admin()
+        
+        # Print all registered routes for debugging
+        print("\n=== REGISTERED ROUTES ===")
+        for rule in app.url_map.iter_rules():
+            print(f"{rule.endpoint}: {rule.rule} {list(rule.methods)}")
+        print("======================\n")
+    
+    # Start the application
     app.run(debug=True)

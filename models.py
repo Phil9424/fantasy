@@ -38,6 +38,10 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+import os
+from werkzeug.utils import secure_filename
+from flask import current_app
+
 class Card(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -48,6 +52,43 @@ class Card(db.Model):
     description = db.Column(db.Text, nullable=True)
     photo_position = db.Column(db.String(50), nullable=True, default='50% 50%')
     country_code = db.Column(db.String(2), nullable=True, default='RU')  # Two-letter country code (ISO 3166-1 alpha-2)
+    
+    def set_image_from_file(self, file_storage):
+        """
+        Save the uploaded file and update the image path.
+        
+        Args:
+            file_storage: FileStorage object from Flask request.files
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            if not file_storage or not file_storage.filename:
+                return False
+                
+            # Create the uploads directory if it doesn't exist
+            upload_folder = os.path.join(current_app.static_folder, 'uploads', 'cards')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Generate a secure filename
+            filename = secure_filename(file_storage.filename)
+            # Add a timestamp to make the filename unique
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"{timestamp}_{filename}"
+            
+            # Save the file
+            filepath = os.path.join(upload_folder, filename)
+            file_storage.save(filepath)
+            
+            # Update the image path (relative to static folder)
+            self.image = os.path.join('uploads', 'cards', filename)
+            return True
+            
+        except Exception as e:
+            current_app.logger.error(f"Error saving image: {str(e)}")
+            return False
     user_cards = db.relationship('UserCard', backref='card', lazy=True)
 
 class UserCard(db.Model):
