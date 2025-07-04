@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Удаление карточки{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3">Удаление карточки #{{ card_id }}</h1>
+                <a href="{{ url_for('admin_cards') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Вернуться к картам
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Принудительное удаление карточки</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Внимание!</strong> Это действие нельзя отменить. Карта будет удалена из системы, а также из коллекций всех пользователей.
+                    </div>
+                    
+                    <p>Вы собираетесь удалить карточку с ID: <strong>{{ card_id }}</strong></p>
+                    
+                    <form action="{{ url_for('force_delete_card_confirm', card_id=card_id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Принудительно удалить карточку
+                            </button>
+                            <a href="{{ url_for('admin_cards') }}" class="btn btn-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

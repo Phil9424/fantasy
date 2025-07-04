@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Фэнтези Лига Мафии{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.0">
+    {% if current_user.is_authenticated %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}?v=1.0.0">
+    {% endif %}
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Фэнтези Лига Мафии</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('rules') }}">Правила</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('leaderboard') }}">Рейтинг</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}#cards">
+                            <i class="bi bi-collection me-1"></i>Мои карты
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-people me-1"></i>Моя команда
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('tournaments.tournaments_list') }}">
+                            <i class="bi bi-trophy me-1"></i>Турниры
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('shop') }}">
+                            <i class="bi bi-shop me-1"></i>Магазин
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if current_user.is_authenticated and current_user.username == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ url_for('admin') }}">Админ-панель</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <!-- Колокольчик уведомлений -->
+                    <li class="nav-item dropdown me-2">
+                        <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell-fill fs-5"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifications-count">
+                                0
+                                <span class="visually-hidden">Новых уведомлений</span>
+                            </span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
+                            <div class="dropdown-header">Уведомления</div>
+                            <div id="notifications-container">
+                                <!-- Уведомления будут загружены динамически -->
+                                <div id="notifications-loading">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <p class="mb-0 mt-2">Загрузка уведомлений...</p>
+                                </div>
+                                <div id="notifications-empty" class="d-none">
+                                    <i class="bi bi-bell-slash"></i>
+                                    <p class="mb-0 mt-2">У вас нет новых уведомлений</p>
+                                </div>
+                            </div>
+                            <!-- Шаблон для уведомлений -->
+                            <template id="notification-template">
+                                <a class="notification-item" href="#" data-id="" data-type="">
+                                    <div class="notification-icon-wrapper">
+                                        <i class="bi"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <div class="notification-title"></div>
+                                        <div class="notification-time"></div>
+                                    </div>
+                                </a>
+                            </template>
+                            <div class="dropdown-divider"></div>
+                            <a class="show-all-notifications" href="{{ url_for('notifications_all') }}">Показать все уведомления</a>
+                        </div>
+                    </li>
+                    
+                    <!-- Профиль пользователя -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <img src="{{ url_for('static', filename='images/avatars/' + current_user.avatar) }}" 
+                                 alt="Аватар" class="rounded-circle me-2" width="32" height="32">
+                            {{ current_user.username }} ({{ current_user.coins }} монет)
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">Профиль</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light me-2" href="{{ url_for('login') }}">Войти</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary" href="{{ url_for('register') }}">Регистрация</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основное содержимое -->
+    <main class="container my-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Подвал -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Фэнтези Лига Мафии</h5>
+                    <p>Создай свою команду и стань чемпионом!</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Ссылки</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('rules') }}" class="text-white">Правила</a></li>
+                        <li><a href="{{ url_for('leaderboard') }}" class="text-white">Рейтинг</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Контакты</h5>
+                    <p>По вопросам: support@mafia-fantasy.ru</p>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <p class="mb-0">&copy; 2025 Фэнтези Лига Мафии. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Скрипты -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Initialize Bootstrap components safely
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            try {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            } catch (e) {
+                console.error('Error initializing tooltip:', e);
+            }
+        });
+
+        // Initialize popovers
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            try {
+                return new bootstrap.Popover(popoverTriggerEl);
+            } catch (e) {
+                console.error('Error initializing popover:', e);
+            }
+        });
+
+        // Initialize modals safely
+        var modalElements = document.querySelectorAll('.modal');
+        modalElements.forEach(function(modalEl) {
+            try {
+                // Initialize modal without options
+                var modal = new bootstrap.Modal(modalEl);
+                // Add click handler for buttons that should show this modal
+                var modalId = modalEl.id;
+                if (modalId) {
+                    var triggerButtons = document.querySelectorAll('[data-bs-target="#' + modalId + '"]');
+                    triggerButtons.forEach(function(button) {
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            modal.show();
+                        });
+                    });
+                }
+            } catch (e) {
+                console.error('Error initializing modal:', e);
+            }
+        });
+    });
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% if current_user.is_authenticated %}
+    <script src="{{ url_for('static', filename='js/notifications.js') }}?v=1.0.0"></script>
+    {% endif %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

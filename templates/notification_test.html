@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Тестирование уведомлений{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+    
+    .notification-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .notification-icon {
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+    
+    .btn-notification {
+        width: 100%;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Тестирование уведомлений</h1>
+    <p class="lead mb-4">На этой странице вы можете протестировать различные типы уведомлений. Нажмите на кнопку, чтобы создать соответствующее уведомление.</p>
+    
+    <div class="row g-4">
+        <!-- Уведомление о паке -->
+        <div class="col-md-4">
+            <div class="card notification-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-box-seam-fill text-danger notification-icon"></i>
+                    <h5 class="card-title">Открытие пака</h5>
+                    <p class="card-text">Создает уведомление о получении новых карт из пака.</p>
+                    <button id="example-pack-btn" class="btn btn-danger btn-notification">Создать уведомление</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Уведомление о продаже карты -->
+        <div class="col-md-4">
+            <div class="card notification-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-cart-check-fill text-primary notification-icon"></i>
+                    <h5 class="card-title">Продажа карты</h5>
+                    <p class="card-text">Создает уведомление о продаже вашей карты на маркете.</p>
+                    <button id="example-market-sell-btn" class="btn btn-primary btn-notification">Создать уведомление</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Уведомление о выставлении карты -->
+        <div class="col-md-4">
+            <div class="card notification-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-tag-fill text-info notification-icon"></i>
+                    <h5 class="card-title">Выставление карты</h5>
+                    <p class="card-text">Создает уведомление о выставлении карты на продажу.</p>
+                    <button id="example-market-list-btn" class="btn btn-info btn-notification">Создать уведомление</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Уведомление о переводе монет -->
+        <div class="col-md-4">
+            <div class="card notification-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-arrow-left-right text-success notification-icon"></i>
+                    <h5 class="card-title">Перевод монет</h5>
+                    <p class="card-text">Создает уведомление о переводе монет другому пользователю.</p>
+                    <button id="example-coins-transfer-btn" class="btn btn-success btn-notification">Создать уведомление</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Уведомление о получении монет -->
+        <div class="col-md-4">
+            <div class="card notification-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-coin text-success notification-icon"></i>
+                    <h5 class="card-title">Получение монет</h5>
+                    <p class="card-text">Создает уведомление о получении монет от другого пользователя.</p>
+                    <button id="example-coins-receive-btn" class="btn btn-success btn-notification">Создать уведомление</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Очистка уведомлений -->
+        <div class="col-md-4">
+            <div class="card notification-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-trash text-secondary notification-icon"></i>
+                    <h5 class="card-title">Сброс уведомлений</h5>
+                    <p class="card-text">Очищает все уведомления и сбрасывает счетчик.</p>
+                    <button id="clear-notifications-btn" class="btn btn-secondary btn-notification">Очистить все</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h5>Информация о работе с уведомлениями</h5>
+            </div>
+            <div class="card-body">
+                <p>Уведомления хранятся в localStorage браузера и индивидуальны для каждого пользователя.</p>
+                <p>Для интеграции с бэкендом используйте функцию <code>addNotification(type, title, time, link, icon)</code>.</p>
+                <p>Доступные типы уведомлений:</p>
+                <ul>
+                    <li><code>card</code> - получение новой карты</li>
+                    <li><code>coins</code> - операции с монетами</li>
+                    <li><code>market</code> - операции на маркете</li>
+                    <li><code>pack</code> - открытие паков</li>
+                    <li><code>transfer</code> - перевод монет</li>
+                    <li><code>sale</code> - продажа карты</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Контейнер для тостов -->
+<div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/notification-examples.js') }}"></script>
+<script>
+    // Добавляем обработчик для кнопки очистки уведомлений
+    document.getElementById('clear-notifications-btn').addEventListener('click', function() {
+        localStorage.removeItem('mafia_fantasy_notifications');
+        localStorage.removeItem('mafia_fantasy_read_notifications');
+        
+        // Обновляем интерфейс
+        const countElement = document.getElementById('notifications-count');
+        if (countElement) {
+            countElement.textContent = '0';
+            countElement.classList.add('d-none');
+        }
+        
+        // Показываем сообщение
+        showToast('Все уведомления очищены!');
+    });
+</script>
+{% endblock %}

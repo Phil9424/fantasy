@@ -1,0 +1,123 @@
+/* Стили для переворота карт */
+.fifa-card-wrapper {
+    perspective: 1000px;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.fifa-card {
+    position: relative;
+    width: 150px;
+    height: 220px;
+    margin: 0 auto;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.card-back {
+    background: linear-gradient(135deg, #2c3e50, #4a6572);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.card-front {
+    transform: rotateY(180deg);
+    background-color: #fff;
+    color: #333;
+}
+
+.fifa-card.flipped {
+    transform: rotateY(180deg);
+}
+
+.card-back-logo {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.card-back-logo i {
+    font-size: 40px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.card-back-text {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+/* Стили для разных редкостей карт */
+.fifa-card[data-rarity="1"] .card-front {
+    background: linear-gradient(135deg, #4b6cb7, #182848);
+}
+
+.fifa-card[data-rarity="2"] .card-front {
+    background: linear-gradient(135deg, #134e5e, #71b280);
+}
+
+.fifa-card[data-rarity="3"] .card-front {
+    background: linear-gradient(135deg, #5f2c82, #49a09d);
+}
+
+.fifa-card[data-rarity="4"] .card-front {
+    background: linear-gradient(135deg, #b24592, #f15f79);
+}
+
+.fifa-card[data-rarity="5"] .card-front {
+    background: linear-gradient(135deg, #ff4e50, #f9d423);
+}
+
+/* Подсветка для прайм-карт */
+.fifa-card-wrapper.is-prime:hover {
+    animation: prime-glow 1.5s infinite alternate;
+}
+
+@keyframes prime-glow {
+    0% {
+        box-shadow: 0 0 5px 2px rgba(255, 78, 80, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 20px 5px rgba(255, 78, 80, 0.8);
+    }
+}
+
+/* Красивый фон для страницы */
+body {
+    background: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+}
+
+.card {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: none !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-header {
+    border-bottom: none !important;
+}

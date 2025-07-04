@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+{% from 'card_templates.html' import player_card %}
+
+{% block title %}Админ-панель - Фэнтези Лига Мафии{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v=1.0.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fifa-cards.css') }}?v=1.0.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cards.css') }}?v=1.0.3">
+{% endblock %}
+
+
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3">Административная панель</h1>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Вернуться в личный кабинет
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{{ url_for('admin') }}" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-grid-fill me-2"></i> Обзор
+                </a>
+                <a href="{{ url_for('add_card') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-plus-circle-fill me-2"></i> Добавить карту
+                </a>
+                <a href="{{ url_for('admin_packs') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-box-fill me-2"></i> Управление паками
+                </a>
+                <a href="{{ url_for('tournaments.admin_tournaments') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-trophy-fill me-2"></i> Управление турнирами
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-people-fill me-2"></i> Пользователи
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#backupModal">
+                    <i class="bi bi-database-fill me-2"></i> Резервное копирование
+                </a>
+            </div>
+            
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Статистика</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Всего карт:</strong> {{ total_cards }}</p>
+                    <p class="mb-2"><strong>Карт у игроков:</strong> {{ total_user_cards }}</p>
+                    <p class="mb-2"><strong>Пользователей:</strong> {{ total_users }}</p>
+                    <p class="mb-2"><strong>Паков:</strong> {{ total_packs }}</p>
+                    <p class="mb-0"><strong>Турниров:</strong> 0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Последние добавленные карты</h5>
+                        <a href="{{ url_for('add_card') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle"></i> Добавить карту
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if recent_cards %}
+                        <div class="team-cards-grid">
+                            {% for card in recent_cards %}
+                                <div class="team-card-item">
+                                    {{ player_card(card) }}
+                                    <div class="mt-2 d-flex gap-2">
+                                        <a href="{{ url_for('add_card', card_id=card.id) }}" 
+                                           class="btn btn-sm btn-outline-primary w-100">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{{ url_for('direct_delete_card', card_id=card.id) }}" 
+                                           class="btn btn-sm btn-outline-danger"
+                                           onclick="return confirm('Удалить карту?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="{{ url_for('admin_cards') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-grid-3x3-gap me-2"></i>Просмотреть все карты
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="bi bi-images text-muted" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="text-muted mb-3">Карты не найдены</h5>
+                            <a href="{{ url_for('add_card') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-2"></i>Добавить первую карту
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backup/Restore Modal -->
+<div class="modal" id="backupModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Резервное копирование базы данных</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-3">
+                    <div class="d-grid gap-2">
+                        <button id="backupBtn" class="btn btn-primary">
+                            <i class="bi bi-download me-2"></i>Создать резервную копию
+                        </button>
+                        <button id="saveDbBtn" class="btn btn-success">
+                            <i class="bi bi-save me-2"></i>Сохранить копию базы данных
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>Восстановить из бэкапа</h5>
+                        <div class="input-group mb-3">
+                            <input type="file" class="form-control" id="restoreFile" accept=".zip">
+                            <button class="btn btn-warning" type="button" id="restoreBtn">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>Восстановить
+                            </button>
+                        </div>
+                        <div id="restoreStatus" class="mt-2"></div>
+                    </div>
+                    <div class="text-center">или</div>
+                    <div class="input-group">
+                        <input type="file" class="form-control" id="restoreFile" accept=".zip" style="display: none;">
+                        <button id="chooseFileBtn" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-upload me-2"></i>Выбрать файл для восстановления
+                        </button>
+                    </div>
+                    <div id="restoreInfo" class="text-muted small d-none">
+                        <i class="bi bi-info-circle"></i> Выбран файл: <span id="selectedFileName"></span>
+                    </div>
+                    <button id="restoreBtn" class="btn btn-danger w-100 d-none">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>Восстановить из выбранного файла
+                    </button>
+                </div>
+                <div id="backupStatus" class="alert mt-3 mb-0 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initialize the modal -->
+<script>
+// Функция для отображения уведомлений
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Добавляем уведомление в начало страницы
+    const container = document.querySelector('.container.py-5');
+    if (container) {
+        container.insertBefore(alertDiv, container.firstChild);
+    } else {
+        document.body.insertBefore(alertDiv, document.body.firstChild);
+    }
+    
+    // Автоматически скрываем через 5 секунд
+    setTimeout(() => {
+        const bsAlert = new bootstrap.Alert(alertDiv);
+        bsAlert.close();
+    }, 5000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the modal
+    var backupModal = new bootstrap.Modal(document.getElementById('backupModal'), {
+        backdrop: true,
+        keyboard: true,
+        focus: true
+    });
+
+    // Handle backup button click
+    document.getElementById('backupBtn')?.addEventListener('click', async function() {
+        const statusElement = document.getElementById('backupStatus');
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        try {
+            // Show loading state
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Создание...';
+            
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            
+            // Create form data to send with the request
+            const formData = new FormData();
+            if (csrfToken) {
+                formData.append('csrf_token', csrfToken);
+            }
+            
+            const response = await fetch('/admin/backup', { 
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken || ''
+                },
+                credentials: 'same-origin'
+            });
+            
+            // First check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                throw new Error('Сервер вернул неожиданный ответ. Пожалуйста, проверьте консоль для подробностей.');
+            }
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || `Ошибка сервера: ${response.status}`);
+            }
+            
+            if (data.success && data.download_url) {
+                // Download the file
+                const link = document.createElement('a');
+                link.href = data.download_url;
+                link.download = data.filename || 'backup_' + new Date().toISOString().split('T')[0] + '.zip';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success message
+                showAlert('success', 'Резервная копия успешно создана и загружена');
+            } else {
+                throw new Error(data.error || 'Неизвестная ошибка при создании резервной копии');
+            }
+        } catch (error) {
+            console.error('Backup error:', error);
+            statusElement.textContent = 'Ошибка: ' + (error.message || 'Неизвестная ошибка');
+            statusElement.className = 'alert alert-danger mt-3 mb-0';
+            statusElement.classList.remove('d-none');
+        } finally {
+            // Restore button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    });
+
+    // Handle file selection
+    document.getElementById('chooseFileBtn')?.addEventListener('click', function() {
+        document.getElementById('restoreFile').click();
+    });
+
+    // Show selected file name
+    document.getElementById('restoreFile')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('selectedFileName').textContent = file.name;
+            document.getElementById('restoreInfo').classList.remove('d-none');
+            document.getElementById('restoreBtn').classList.remove('d-none');
+        }
+    });
+
+    // Handle restore button click
+    document.getElementById('restoreBtn')?.addEventListener('click', async function() {
+        const fileInput = document.getElementById('restoreFile');
+        const statusElement = document.getElementById('restoreStatus');
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+            showAlert('warning', 'Пожалуйста, выберите файл бэкапа');
+            return;
+        }
+        
+        // Confirm before restore
+        if (!confirm('ВНИМАНИЕ: Восстановление из резервной копии перезапишет текущие данные. Вы уверены, что хотите продолжить?')) {
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (csrfToken) {
+            formData.append('csrf_token', csrfToken);
+        }
+        
+        try {
+            // Show loading state
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Восстановление...';
+            
+            // Clear previous status
+            statusElement.innerHTML = '';
+            
+            const response = await fetch('/admin/restore', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken || ''
+                },
+                credentials: 'same-origin'
+            });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                throw new Error('Сервер вернул неожиданный ответ. Пожалуйста, проверьте консоль для подробностей.');
+            }
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || `Ошибка сервера: ${response.status}`);
+            }
+            
+            if (data.success) {
+                statusElement.innerHTML = '<div class="alert alert-success">Восстановление успешно завершено! Страница будет перезагружена через 3 секунды.</div>';
+                
+                // Reload after a delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                throw new Error(data.error || 'Неизвестная ошибка при восстановлении из резервной копии');
+            }
+        } catch (error) {
+            console.error('Restore error:', error);
+            statusElement.innerHTML = `<div class="alert alert-danger">Ошибка: ${error.message}</div>`;
+            statusElement.className = 'alert alert-danger mt-3 mb-0';
+            statusElement.classList.remove('d-none');
+        } finally {
+            // Restore button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    });
+
+    // Обработчик для кнопки сохранения БД
+    document.getElementById('saveDbBtn')?.addEventListener('click', async function() {
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        try {
+            // Показываем индикатор загрузки
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Подготовка...';
+            
+            // Создаем временную ссылку для скачивания
+            const response = await fetch('/admin/download_db');
+            
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(`Ошибка сервера: ${response.status} - ${error}`);
+            }
+            
+            // Получаем данные как Blob
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            
+            // Создаем временную ссылку для скачивания
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mafia_fantasy_${new Date().toISOString().replace(/[:.]/g, '-')}.db`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Очистка
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // Показываем уведомление об успехе
+            showAlert('success', 'База данных успешно сохранена');
+            
+        } catch (error) {
+            console.error('Ошибка при сохранении БД:', error);
+            showAlert('danger', `Ошибка при сохранении: ${error.message}`);
+        } finally {
+            // Восстанавливаем кнопку
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    });
+
+    // Обработчик для восстановления из бэкапа
+    document.getElementById('restoreBtn')?.addEventListener('click', async function() {
+        const fileInput = document.getElementById('restoreFile');
+        const statusDiv = document.getElementById('restoreStatus');
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+            statusDiv.innerHTML = '<div class="alert alert-warning">Пожалуйста, выберите файл бэкапа</div>';
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Добавляем CSRF токен, если он есть
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (csrfToken) {
+            formData.append('csrf_token', csrfToken);
+        }
+        
+        try {
+            // Показываем индикатор загрузки
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Восстановление...';
+            statusDiv.innerHTML = '<div class="alert alert-info">Идет восстановление из бэкапа, пожалуйста подождите...</div>';
+            
+            // Отправляем файл на сервер
+            const response = await fetch('/admin/restore', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken || ''
+                },
+                credentials: 'same-origin'
+            });
+            
+            // Проверяем, является ли ответ JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                throw new Error('Сервер вернул неожиданный ответ. Пожалуйста, проверьте консоль для подробностей.');
+            }
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                statusDiv.innerHTML = '<div class="alert alert-success">Восстановление успешно завершено! Страница будет перезагружена через 3 секунды.</div>';
+                
+                // Перезагружаем страницу через 3 секунды
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                const errorMsg = result.error || 'Произошла ошибка при восстановлении';
+                throw new Error(errorMsg);
+            }
+        } catch (error) {
+            console.error('Ошибка при восстановлении:', error);
+            const errorMessage = error.message || 'Неизвестная ошибка';
+            statusDiv.innerHTML = `<div class="alert alert-danger">Ошибка: ${errorMessage}</div>`;
+        } finally {
+            // Восстанавливаем кнопку
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    });
+});
+</script>
+{% endblock %}

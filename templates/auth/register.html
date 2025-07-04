@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - Фэнтези Лига Мафии{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-5">
+                    <div class="text-center mb-5">
+                        <h1 class="h3 mb-3 fw-normal">Создать аккаунт</h1>
+                        <p class="text-muted">Присоединяйтесь к Фэнтези Лиге Мафии и начните собирать свою команду уже сегодня!</p>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('register') }}" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="username" class="form-label">Имя пользователя</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-person-fill"></i>
+                                    </span>
+                                    <input type="text" class="form-control form-control-lg" id="username" name="username" 
+                                           placeholder="Придумайте имя" required autofocus>
+                                </div>
+                                <div class="form-text">От 3 до 20 символов</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <label for="email" class="form-label">Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-envelope-fill"></i>
+                                    </span>
+                                    <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                                           placeholder="Ваш email" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="password" class="form-label">Пароль</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-lock-fill"></i>
+                                    </span>
+                                    <input type="password" class="form-control form-control-lg" id="password" name="password" 
+                                           placeholder="Придумайте пароль" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Не менее 8 символов</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <label for="confirm_password" class="form-label">Подтвердите пароль</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-lock-fill"></i>
+                                    </span>
+                                    <input type="password" class="form-control form-control-lg" id="confirm_password" 
+                                           name="confirm_password" placeholder="Повторите пароль" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    Я принимаю <a href="#" class="text-decoration-none">Условия использования</a> и согласен с 
+                                    <a href="#" class="text-decoration-none">Политикой конфиденциальности</a>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter" checked>
+                                <label class="form-check-label" for="newsletter">
+                                    Получать уведомления о новых турнирах и акциях
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <button class="w-100 btn btn-primary btn-lg mb-3" type="submit">Зарегистрироваться</button>
+                        
+                        <div class="text-center mt-4">
+                            <p class="mb-0">Уже есть аккаунт? <a href="{{ url_for('login') }}" class="text-decoration-none">Войдите</a></p>
+                        </div>
+                        
+                        <div class="position-relative my-4">
+                            <hr>
+                            <div class="position-absolute top-50 start-50 translate-middle bg-white px-3">
+                                <span class="text-muted small">Или зарегистрируйтесь через</span>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-2">
+                            <div class="col">
+                                <a href="#" class="w-100 btn btn-outline-danger">
+                                    <i class="bi bi-google me-2"></i> Google
+                                </a>
+                            </div>
+                            <div class="col">
+                                <a href="#" class="w-100 btn btn-outline-primary">
+                                    <i class="bi bi-facebook me-2"></i> Facebook
+                                </a>
+                            </div>
+                            <div class="col">
+                                <a href="#" class="w-100 btn btn-outline-dark">
+                                    <i class="bi bi-github me-2"></i> GitHub
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Показать/скрыть пароль
+    function setupPasswordToggle(buttonId, inputId) {
+        const button = document.getElementById(buttonId);
+        const input = document.getElementById(inputId);
+        
+        if (button && input) {
+            button.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            });
+        }
+    }
+    
+    // Настройка тумблеров для паролей
+    document.addEventListener('DOMContentLoaded', function() {
+        setupPasswordToggle('togglePassword', 'password');
+        setupPasswordToggle('toggleConfirmPassword', 'confirm_password');
+        
+        // Валидация формы
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (password !== confirmPassword) {
+                event.preventDefault();
+                alert('Пароли не совпадают!');
+                return false;
+            }
+            
+            if (password.length < 8) {
+                event.preventDefault();
+                alert('Пароль должен содержать не менее 8 символов!');
+                return false;
+            }
+            
+            if (!document.getElementById('terms').checked) {
+                event.preventDefault();
+                alert('Вы должны принять условия использования!');
+                return false;
+            }
+            
+            return true;
+        });
+        
+        // Анимация при загрузке
+        form.classList.add('animate__animated', 'animate__fadeInUp');
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .card {
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .btn-primary {
+        padding: 0.75rem;
+        font-weight: 600;
+    }
+    .input-group-text {
+        background-color: transparent;
+    }
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .form-text {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    .form-check-label a {
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,600 @@
+/* Cards Grid Layout */
+.fifa-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.fifa-card-wrapper {
+    perspective: 1000px;
+    height: 250px;
+}
+
+.fifa-card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+    cursor: pointer;
+}
+
+.fifa-card:hover {
+    transform: translateY(-5px) rotateX(5deg);
+}
+
+/* Card Front */
+.fifa-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+/* Card rarity colors */
+.fifa-card[data-rarity="1"] { background: linear-gradient(135deg, #cd7f32, #8b5a2b); }
+.fifa-card[data-rarity="2"] { background: linear-gradient(135deg, #c0c0c0, #a8a8a8); }
+.fifa-card[data-rarity="3"] { background: linear-gradient(135deg, #ffd700, #d4af37); }
+.fifa-card[data-rarity="4"] { background: linear-gradient(135deg, #b9f2ff, #89cff0); }
+.fifa-card[data-rarity="5"] { background: linear-gradient(135deg, #ff69b4, #ff1493); }
+
+/* Player Image */
+.player-image-container {
+    position: relative;
+    width: 100%;
+    height: 70%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.player-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.fifa-card:hover .player-image {
+    transform: scale(1.05);
+}
+
+/* Card Overlay */
+.card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+}
+
+.fifa-card:hover .card-overlay {
+    transform: translateY(0);
+}
+
+/* Player Name */
+.player-name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Rarity Stars */
+.card-rarity {
+    display: flex;
+    justify-content: center;
+    margin: 5px 0;
+}
+
+.stars {
+    color: #ffd700;
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
+/* Price */
+.card-price {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.price-value {
+    font-weight: bold;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.price-label {
+    font-size: 0.7rem;
+    color: #aaa;
+    text-transform: uppercase;
+}
+
+/* Prime Badge */
+.prime-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #ffd700, #d4af37);
+    color: #000;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .fifa-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    .fifa-card-wrapper {
+        height: 220px;
+    }
+}
+
+/* Player Card Styles */
+/* Default Card Style (1-star) */
+.team-card-item .card,
+.user-card-item .card {
+    position: relative;
+    width: 334px;
+    height: 449px;
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-position: center;
+    clip-path: path('M 165.225 20 C 142.806 20 57.6146 21.4644 20 29.7107 V 354.321 C 20 374.112 38.015 384.455 47.0225 387.152 L 170.625 429 C 199.983 418.827 264.603 396.215 288.223 387.152 C 311.843 378.089 315.079 361.488 313.744 354.321 V 29.7107 C 272.126 21.4644 187.644 20 165.225 20 Z');
+    transform: scale(0.8);
+    transform-origin: top center;
+    margin-bottom: -90px;
+    border: none;
+    padding: 0;
+}
+
+.team-card-item .card .card-header,
+.user-card-item .card .card-header {
+    position: relative;
+    margin-top: 20px; /* Align with clip-path top */
+    height: 285px; /* Based on SVG layout */
+    padding: 0;
+    background-color: transparent;
+    border-bottom: none;
+}
+
+.team-card-item .card .card-photo,
+.user-card-item .card .card-photo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--player-photo);
+    background-size: cover;
+    background-position: var(--player-photo-position, 50% 50%); /* Use variable for position */
+    background-repeat: no-repeat; /* Prevent photo from tiling */
+    z-index: 1;
+}
+
+.team-card-item .card .card-logo,
+.user-card-item .card .card-logo {
+    position: absolute;
+    top: 21px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 85px;
+    height: auto;
+    z-index: 3;
+}
+
+/* Default bronze card body */
+.team-card-item .card .card-body,
+.user-card-item .card .card-body {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 144px;
+    padding: 15px 20px 20px;
+    box-sizing: border-box;
+    z-index: 2;
+    color: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    overflow: visible !important;
+    /* Bronze gradient - top to bottom */
+    background: linear-gradient(to bottom, #DD9E60 0%, #191509 100%) !important;
+}
+
+/* Silver card body */
+.card.silver .card-body,
+.team-card-item .card.silver .card-body,
+.user-card-item .card.silver .card-body {
+    background: linear-gradient(to bottom, #E2E2E2 0%, #505050 100%) !important;
+    box-shadow: 0 0 15px rgba(180, 180, 200, 0.5) !important;
+    color: white !important;
+}
+
+/* Gold card body */
+.card.gold .card-body,
+.team-card-item .card.gold .card-body,
+.user-card-item .card.gold .card-body {
+    background: linear-gradient(to bottom, #F7F3A6 0%, #DEC872 100%) !important;
+    box-shadow: 0 0 15px rgba(184, 134, 11, 0.5) !important;
+    color: #333 !important;
+}
+
+/* 4-star (Platinum) card with shield background */
+.card.platinum,
+.team-card-item .card.platinum,
+.user-card-item .card.platinum {
+    background: url('/static/images/cards/platinum_shield.png') no-repeat center center !important;
+    background-size: 100% 115% !important; /* Increased from contain to 120% */
+    position: relative;
+    border: none !important;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    box-shadow: none !important;
+    width: 334px; /* Match other cards */
+    height: 449px; /* Match other cards */
+    transform: scale(0.8) !important; /* Match other cards scaling */
+    transform-origin: top center !important; /* Match other cards */
+    margin-bottom: -90px !important; /* Match other cards */
+    clip-path: none !important; /* Remove clip-path to use the image shape */
+}
+
+/* Platinum card specific styles */
+.card.platinum .card-title,
+.team-card-item.platinum .card .card-title,
+.user-card-item.platinum .card .card-title {
+    color: #333;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.card.platinum .card-name,
+.team-card-item.platinum .card .card-name,
+.user-card-item.platinum .card .card-name {
+    color: #111;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.7);
+}
+
+/* Platinum card glow effect */
+.card.platinum {
+    position: relative;
+    overflow: visible;
+}
+
+/* Card body styling */
+.card.platinum .card-body {
+    position: relative;
+    z-index: 2;
+   
+    background: transparent !important;
+    padding: 0;
+    margin: 0;
+    border: none !important;
+}
+
+@keyframes platinumGlow {
+    0% { 
+        background-position: 0% 50%;
+        opacity: 0.8;
+    }
+    50% { 
+        background-position: 100% 50%;
+        opacity: 1;
+    }
+    100% { 
+        background-position: 0% 50%;
+        opacity: 0.8;
+    }
+}
+
+.team-card-item .card .card-title,
+.user-card-item .card .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: #000000 !important;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.team-card-item .card .card-name,
+.user-card-item .card .card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.3;
+    color: #000000 !important;
+    margin: 0;
+    padding: 0 10px;
+    text-transform: uppercase;
+    text-align: center;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    position: absolute;
+    top: 5px;
+}
+
+.team-card-item .card .card-flag,
+.user-card-item .card .card-flag {
+    position: absolute;
+    bottom: 48px;
+    width: 28px;
+    height: 21px;
+    z-index: 3;
+    border-radius: 3px;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Top player text */
+.card-top-player {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+    margin: 5px 0;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: absolute;
+    top: 30px;
+}
+
+/* Flag container - using direct flag class instead */
+.card-flag-container {
+    display: none; /* Hide the container since we're using direct flag positioning */
+}
+
+/* Small Card (for pack opening) */
+.card.small-card {
+    position: relative;
+    width: 334px;
+    height: 449px;
+    background: #000; /* Fallback color */
+    clip-path: path('M 165.225 20 C 142.806 20 57.6146 21.4644 20 29.7107 V 354.321 C 20 374.112 38.015 384.455 47.0225 387.152 L 170.625 429 C 199.983 418.827 264.603 396.215 288.223 387.152 C 311.843 378.089 315.079 361.488 313.744 354.321 V 29.7107 C 272.126 21.4644 187.644 20 165.225 20 Z');
+    transform: scale(0.4);
+    transform-origin: top center;
+    margin: 0 !important;
+    border: none;
+    padding: 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+/* Card Header - Photo Area */
+.card.small-card .card-header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    height: 285px;
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    background-image: var(--bg-image, url('/static/images/card_bg_bronze.png'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+    /* Match dashboard card header */
+    margin-top: 0;
+    padding: 0;
+    border: none;
+}
+
+.card.small-card .card-photo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: var(--player-photo-position, 50% 50%);
+    background-image: var(--player-photo, none);
+    z-index: 2;
+    border-radius: 8px 8px 0 0;
+    /* Reset any transforms that might be causing the shift */
+    transform: none;
+    -webkit-transform: none;
+    -moz-transform: none;
+    -ms-transform: none;
+    /* Ensure no margins or padding */
+    margin: 0;
+    padding: 0;
+    /* Prevent any overflow */
+    overflow: hidden;
+    /* Reset transforms */
+    will-change: auto;
+}
+
+/* Photo positioning and scaling */
+.card.small-card .card-photo {
+    transform: none;
+    transform-origin: center;
+    will-change: auto;
+    backface-visibility: visible;
+    -moz-backface-visibility: visible;
+    -ms-backface-visibility: visible;
+    background-position: center var(--player-photo-vertical, 50%) !important;
+    background-position-x: center !important;
+    -ms-backface-visibility: hidden;
+}
+
+/* Card Body - Bottom Section */
+.card.small-card .card-body {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 144px;
+    padding: 15px 20px 20px;
+    box-sizing: border-box;
+    z-index: 2;
+    color: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    overflow: visible !important;
+    /* Default bronze gradient */
+    background: linear-gradient(to bottom, #DD9E60 0%, #191509 100%) !important;
+}
+
+/* Silver card body */
+.card.small-card.silver .card-body {
+    background: linear-gradient(to bottom, #E2E2E2 0%, #505050 100%) !important;
+    box-shadow: 0 0 15px rgba(180, 180, 200, 0.5) !important;
+    color: white !important;
+}
+
+/* Gold card body */
+.card.small-card.gold .card-body {
+    background: linear-gradient(to bottom, #F7F3A6 0%, #DEC872 100%) !important;
+    box-shadow: 0 0 15px rgba(184, 134, 11, 0.5) !important;
+    color: #333 !important;
+}
+
+/* Player Name */
+.card.small-card .card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px !important;
+    font-weight: 500;
+    line-height: 1.2;
+    color: #000000 !important;
+    text-transform: uppercase;
+    margin: 5px 0;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+/* Logo - Positioned at bottom of photo */
+.card.small-card .card-logo {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    z-index: 3;
+    border-radius: 4px;
+    border: 2px solid #fff;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Flag - Positioned in bottom right of card body */
+.card.small-card .card-flag {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    width: 30px;
+    height: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 2px;
+    z-index: 3;
+}
+
+/* Top Player Badge */
+.card.small-card .card-top-player {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 10px !important;
+    font-weight: 700;
+    padding: 3px 8px !important;
+    border-radius: 3px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    z-index: 3;
+}
+
+/* Hide title if empty */
+.card.small-card .card-title {
+    display: none;
+}
+
+/* Silver Card Variant (2-star) */
+.card.silver,
+.team-card-item .card.silver,
+.user-card-item .card.silver {
+    background-image: var(--bg-image) !important;
+}
+
+.team-card-item.silver .card .card-body,
+.user-card-item.silver .card .card-body {
+    background: linear-gradient(135deg, #F0F0F0, #C0C0C0);
+    box-shadow: 0 0 15px rgba(180, 180, 200, 0.5);
+}
+
+.team-card-item.silver .card .card-title,
+.user-card-item.silver .card .card-title {
+    color: #333;
+}
+
+.team-card-item.silver .card .card-name,
+.user-card-item.silver .card .card-name {
+    color: #222;
+    text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.3);
+}
+
+/* Gold Card Variant (3-star) */
+.card.gold,
+.team-card-item .card.gold,
+.user-card-item .card.gold {
+    background-image: var(--bg-image) !important;
+}
+
+.team-card-item.gold .card .card-body,
+.user-card-item.gold .card .card-body {
+    background: linear-gradient(135deg, #FFE44D, #FFD700);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.team-card-item.gold .card .card-title,
+.user-card-item.gold .card .card-title {
+    color: #5C3D00;
+}
+
+.team-card-item.gold .card .card-name,
+.user-card-item.gold .card .card-name {
+    color: #3D2800;
+    text-shadow: 1px 1px 2px rgba(255, 215, 0, 0.3);
+}

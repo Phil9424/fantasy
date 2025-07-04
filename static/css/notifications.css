@@ -1,0 +1,143 @@
+/* Стили для уведомлений */
+
+/* Стили для выпадающего меню уведомлений */
+.dropdown-menu[aria-labelledby="notificationsDropdown"] {
+    width: 320px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Заголовок уведомлений */
+.dropdown-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 12px 15px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Контейнер для списка уведомлений */
+#notifications-container {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+/* Элемент уведомления */
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: flex-start;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* Иконка уведомления */
+.notification-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+/* Содержимое уведомления */
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.notification-time {
+    color: #6c757d;
+    font-size: 12px;
+}
+
+/* Рамка для уведомления */
+.notification-item {
+    position: relative;
+    border-left: 4px solid transparent;
+}
+
+/* Цвета рамок для разных типов уведомлений */
+.notification-item[data-type="card"] {
+    border-left-color: #ffc107; /* warning */
+}
+
+.notification-item[data-type="coins"] {
+    border-left-color: #28a745; /* success */
+}
+
+.notification-item[data-type="market"] {
+    border-left-color: #007bff; /* primary */
+}
+
+.notification-item[data-type="pack"] {
+    border-left-color: #dc3545; /* danger */
+}
+
+.notification-item[data-type="transfer"] {
+    border-left-color: #17a2b8; /* info */
+}
+
+.notification-item[data-type="sale"] {
+    border-left-color: #6610f2; /* purple */
+}
+
+/* Стили для пустого списка уведомлений */
+#notifications-empty {
+    padding: 30px 15px;
+    text-align: center;
+    color: #6c757d;
+}
+
+#notifications-empty i {
+    font-size: 24px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+/* Стили для индикатора загрузки */
+#notifications-loading {
+    padding: 30px 15px;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* Ссылка "Показать все уведомления" */
+.show-all-notifications {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 10px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Анимация для новых уведомлений */
+@keyframes notification-highlight {
+    0% { background-color: rgba(0, 123, 255, 0.1); }
+    100% { background-color: transparent; }
+}
+
+.notification-item.new {
+    animation: notification-highlight 2s ease-out;
+}

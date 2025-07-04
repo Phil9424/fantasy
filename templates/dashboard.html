@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% from 'card_templates.html' import player_card %}
+
+{% block title %}Моя команда - Фэнтези Лига Мафии{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v=1.0.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fifa-cards.css') }}?v=1.0.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cards.css') }}?v=1.0.3">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/drag-drop.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}?v=1.0.0"></script>
+<script>
+    function handleImageError(img) {
+        img.onerror = null;
+        img.src = img.dataset.placeholder;
+        return true;
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body text-center">
+                    <div class="position-relative d-inline-block mb-3">
+                        {% if current_user.avatar and current_user.avatar != 'default_avatar.png' %}
+                            <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" 
+                                 class="rounded-circle" width="120" height="120" alt="{{ current_user.username }}">
+                        {% else %}
+                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
+                                 style="width: 120px; height: 120px;">
+                                <span class="display-4 text-white">{{ current_user.username[0]|upper }}</span>
+                            </div>
+                        {% endif %}
+                        <button type="button" class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle" 
+                                data-bs-toggle="modal" data-bs-target="#avatarModal">
+                            <i class="bi bi-camera"></i>
+                        </button>
+                    </div>
+                    
+                    <h4 class="mb-0">{{ current_user.username }}</h4>
+                    <p class="text-muted">{{ current_user.email }}</p>
+                    
+                    <div class="d-flex justify-content-center mt-3">
+                        <div class="me-4">
+                            <h5 class="mb-0">{{ current_user.points }}</h5>
+                            <small class="text-muted">Очки</small>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">{{ current_user.coins }}</h5>
+                            <small class="text-muted">Монеты</small>
+                        </div>
+                    </div>
+                    
+                    {% if current_user.is_admin %}
+                    <div class="mt-3">
+                        <a href="{{ url_for('admin') }}" class="btn btn-sm btn-danger">
+                            <i class="bi bi-shield-lock-fill"></i> Админ-панель
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">Моя команда</h5>
+                    <!-- Отладка: Количество карт в команде: {{ team_cards|length }} -->
+                    {% if team_cards %}
+                        <div class="team-cards-grid">
+                            {% for card in team_cards %}
+                                <div class="team-card-item">
+                                    {{ player_card(card.card) }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('update_team') }}" class="btn btn-outline-primary btn-sm w-100">Изменить команду</a>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-3">У вас пока нет карт в команде</p>
+                            <a href="{{ url_for('update_team') }}" class="btn btn-primary">Создать команду</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0">Мои карты</h5>
+                        <a href="{{ url_for('shop') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-cart-plus"></i> Купить карты
+                        </a>
+                    </div>
+                    
+                    {% if user_cards %}
+                        <div id="cardsContainer" style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
+                            <div style="display: inline-flex; gap: 8px;">
+                                {% for user_card in user_cards[:8] %}
+                                    <div class="user-card-item" data-card-id="{{ user_card.id }}">
+                                        {{ player_card(user_card.card) }}
+                                        {# TODO: Вернуть меню действий, адаптировав его под новый дизайн карточки #}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            </div>
+                        </div>
+                        {% if user_cards|length > 8 %}
+                            <button id="showMoreBtn" class="show-more-btn" style="margin-top: 10px; font-size: 14px; padding: 10px; background-color: #e74c3c; color: white; border: none; border-radius: 8px; width: 100%;">Посмотреть все карты ({{ user_cards|length }})</button>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="bi bi-card-image" style="font-size: 3rem; opacity: 0.5;"></i>
+                            </div>
+                            <h5>У вас пока нет карт</h5>
+                            <p class="text-muted">Приобретите карты в магазине, чтобы начать собирать коллекцию</p>
+                            <a href="{{ url_for('shop') }}" class="btn btn-primary">
+                                <i class="bi bi-cart-plus me-2"></i>В магазин
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow-sm border-0" id="tournaments">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">Активные турниры</h5>
+                        <a href="{{ url_for('tournaments.tournaments_list') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-trophy"></i> Все турниры
+                        </a>
+                    </div>
+                    
+                    {% if active_tournaments %}
+                        <div class="list-group">
+                            {% for tournament in active_tournaments %}
+                                <a href="{{ url_for('tournaments.tournament_details', tournament_id=tournament.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ tournament.name }}</h6>
+                                        <div>
+                                            {% for i in range(tournament.stars) %}
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            {% endfor %}
+                                            <small class="text-muted ms-2">{{ tournament.start_time.strftime('%d.%m.%Y') }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">Участников: {{ tournament.participants|length }}</small>
+                                        {% if tournament.registration_open %}
+                                            <span class="badge bg-success">Открыта регистрация</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Регистрация закрыта</span>
+                                        {% endif %}
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-trophy" style="font-size: 2rem; opacity: 0.5;"></i>
+                            <p class="mt-2 text-muted">Сейчас нет активных турниров</p>
+                            <a href="{{ url_for('tournaments.tournaments_list') }}" class="btn btn-outline-primary mt-2">
+                                <i class="bi bi-trophy"></i> Посмотреть все турниры
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Avatar Upload Modal -->
+<div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="avatarModalLabel">Изменить аватар</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('update_avatar') }}" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3 text-center">
+                        <div id="avatarPreview" class="mb-3" style="display: none;">
+                            <img id="previewImage" src="#" alt="Preview" class="img-fluid rounded-circle" style="max-width: 200px; max-height: 200px; border: 2px solid var(--primary);">
+                        </div>
+                        <label for="avatar" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-upload me-2"></i>Выбрать изображение
+                            <input type="file" id="avatar" name="avatar" accept="image/*" style="display: none;" onchange="previewAvatar(this)" required>
+                        </label>
+                        <div class="form-text text-muted">Рекомендуемый размер: 200x200 пикселей. Поддерживаемые форматы: JPG, PNG, GIF.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-upload me-2"></i>Загрузить аватар
+                    </button>
+                </form>
+                <script>
+                function previewAvatar(input) {
+                    const preview = document.getElementById('previewImage');
+                    const previewDiv = document.getElementById('avatarPreview');
+                    
+                    if (input.files && input.files[0]) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            preview.src = e.target.result;
+                            previewDiv.style.display = 'block';
+                        }
+                        
+                        reader.readAsDataURL(input.files[0]);
+                    }
+                }
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add to Team Confirmation Modal -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize progress bars
+    document.querySelectorAll('.xp-progress-bar').forEach(bar => {
+        const percent = bar.getAttribute('data-xp-percent');
+        if (percent) bar.style.width = `${percent}%`;
+    });
+
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+
+    // Handle add to team modal
+    const addModal = document.getElementById('addToTeamModal');
+    if (addModal) {
+        addModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById('addCardId').value = button.getAttribute('data-card-id');
+        });
+    }
+    
+    // Handle remove from team modal
+    const removeModal = document.getElementById('removeFromTeamModal');
+    if (removeModal) {
+        removeModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById('removeCardId').value = button.getAttribute('data-card-id');
+        });
+    }
+
+    // Initialize drag and drop
+    initDragAndDrop();
+    
+    // Handle card clicks to show details
+    document.querySelectorAll('.mafia-card-wrapper').forEach(card => {
+        card.addEventListener('click', function() {
+            const cardId = this.dataset.cardId;
+            if (cardId) {
+                showCardDetails(cardId);
+            }
+        });
+    });
+});
+
+function initDragAndDrop() {
+    const cards = document.querySelectorAll('.mafia-card-wrapper');
+    const teamSlots = document.querySelectorAll('.team-slot');
+    
+    cards.forEach(card => {
+        card.setAttribute('draggable', 'true');
+        
+        card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', card.dataset.cardId);
+            setTimeout(() => {
+                card.classList.add('opacity-25');
+            }, 0);
+        });
+        
+        card.addEventListener('dragend', () => {
+            card.classList.remove('opacity-25');
+        });
+    });
+    
+    teamSlots.forEach(slot => {
+        slot.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            slot.classList.add('border-primary');
+        });
+        
+        slot.addEventListener('dragleave', () => {
+            slot.classList.remove('border-primary');
+        });
+        
+        slot.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slot.classList.remove('border-primary');
+            
+            const cardId = e.dataTransfer.getData('text/plain');
+            const slotNumber = slot.dataset.slot;
+            
+            if (cardId && slotNumber) {
+                document.getElementById('cardIdInput').value = cardId;
+                document.getElementById('teamSlotSelect').value = slotNumber;
+                document.getElementById('addToTeamForm').dispatchEvent(new Event('submit'));
+            }
+        });
+    });
+}
+
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast show align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto-remove toast after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 150);
+    }, 5000);
+}
+
+function showCardDetails(cardId) {
+    fetch(`/api/cards/${cardId}`)
+        .then(response => response.json())
+        .then(card => {
+            const modal = new bootstrap.Modal(document.getElementById('cardDetailsModal'));
+            const modalBody = document.querySelector('#cardDetailsModal .modal-body');
+            
+            // Populate modal with card details
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <img src="/static/images/cards/${card.image}" class="img-fluid mb-3" alt="${card.name}" onerror="this.onerror=null; this.src='/static/uploads/${card.image}'">
+                    <h4>${card.name}</h4>
+                    <p class="text-muted">${card.rarity_name} • ${card.base_points} очков</p>
+                    <p>${card.description || 'Описание отсутствует'}</p>
+                    <button class="btn btn-primary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            `;
+            
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error loading card details:', error);
+            showToast('Не удалось загрузить информацию о карте', 'danger');
+        });
+}
+</script>
+{% endblock %}

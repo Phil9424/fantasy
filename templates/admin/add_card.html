@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}{% if card %}Редактирование карты{% else %}Добавление карты{% endif %} - Админ-панель{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{{ url_for('admin') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-grid-fill me-2"></i> Обзор
+                </a>
+                <a href="{{ url_for('add_card') }}" class="list-group-item list-group-item-action {% if not card %}active{% endif %}">
+                    <i class="bi bi-plus-circle-fill me-2"></i> Добавить карту
+                </a>
+                <a href="{{ url_for('admin_cards') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-collection me-2"></i> Все карты
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-people-fill me-2"></i> Пользователи
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h1 class="h4 mb-0">
+                        {% if card %}
+                            Редактирование карты: {{ card.name }}
+                        {% else %}
+                            Добавление новой карточки игрока
+                        {% endif %}
+                    </h1>
+                    <a href="{{ url_for('admin_cards') }}" class="btn btn-sm btn-light">
+                        <i class="bi bi-arrow-left me-1"></i> Назад к картам
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_card', card_id=card.id if card else None) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-4">
+                            <label for="name" class="form-label">Имя игрока</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ card.name if card else '' }}" required>
+                            <div class="form-text">Введите имя игрока для карточки</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="rarity" class="form-label">Редкость</label>
+                            <select class="form-select" id="rarity" name="rarity" required>
+                                <option value="1" {% if card and card.rarity == 1 %}selected{% endif %}>Бронза</option>
+                                <option value="2" {% if card and card.rarity == 2 %}selected{% endif %}>Серебро</option>
+                                <option value="3" {% if card and card.rarity == 3 %}selected{% endif %}>Золото</option>
+                                <option value="4" {% if card and card.rarity == 4 %}selected{% endif %}>Легенда</option>
+                            </select>
+                            <div class="form-text">Выберите редкость карты</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_prime" name="is_prime" {% if card and card.is_prime %}checked{% endif %}>
+                                <label class="form-check-label" for="is_prime">
+                                    Прайм-карта
+                                </label>
+                                <div class="form-text">Отметьте, если это карта "Прайм" (особая версия игрока)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="image" class="form-label">Изображение</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*" {% if not card %}required{% endif %}>
+                            <input type="hidden" id="photo_position" name="photo_position" value="{{ card.photo_position if card and card.photo_position else '50% 50%' }}">
+                            {% if card and card.image %}
+                                <div class="mt-2">
+                                    <small class="text-muted">Текущее изображение:</small><br>
+                                    <img src="{{ url_for('static', filename=card.image) }}" alt="{{ card.name }}" class="img-thumbnail mt-1" style="max-height: 100px;">
+                                </div>
+                                <div class="form-text">Оставьте пустым, чтобы оставить текущее изображение</div>
+                            {% else %}
+                                <div class="form-text">Загрузите изображение игрока (рекомендуемый размер: 300x400px)</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="base_points" class="form-label">Базовые очки</label>
+                            <input type="number" class="form-control" id="base_points" name="base_points" min="0" value="{{ card.base_points if card else '100' }}">
+                            <div class="form-text">Базовые очки влияют на стоимость и силу карты</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Описание</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ card.description if card and card.description else '' }}</textarea>
+                            <div class="form-text">Добавьте краткое описание игрока (необязательно)</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="country_code" class="form-label">Страна</label>
+                            <select class="form-select" id="country_code" name="country_code">
+                                <option value="KZ" {% if card and card.country_code == 'KZ' %}selected{% endif %}>Казахстан</option>
+                                <option value="RU" {% if card and card.country_code == 'RU' %}selected{% endif %}>Россия</option>
+                                <option value="CY" {% if card and card.country_code == 'CY' %}selected{% endif %}>Кипр</option>
+                                <option value="BY" {% if card and card.country_code == 'BY' %}selected{% endif %}>Беларусь</option>
+                                <option value="ES" {% if card and card.country_code == 'ES' %}selected{% endif %}>Испания</option>
+                                <option value="KG" {% if card and card.country_code == 'KG' %}selected{% endif %}>Кыргызстан</option>
+                                <option value="UZ" {% if card and card.country_code == 'UZ' %}selected{% endif %}>Узбекистан</option>
+                                <option value="PH" {% if card and card.country_code == 'PH' %}selected{% endif %}>Филиппины</option>
+                                <option value="TH" {% if card and card.country_code == 'TH' %}selected{% endif %}>Тайланд</option>
+                                <option value="AM" {% if card and card.country_code == 'AM' %}selected{% endif %}>Армения</option>
+                            </select>
+                            <div class="form-text">Выберите страну для флага на карточке</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                {% if card %}
+                                    <i class="bi bi-save me-1"></i> Сохранить изменения
+                                {% else %}
+                                    <i class="bi bi-plus-circle me-1"></i> Добавить карту
+                                {% endif %}
+                            </button>
+                            <a href="{{ url_for('admin_cards') }}" class="btn btn-outline-secondary">Отмена</a>
+                            
+                            {% if card %}
+                                <a href="{{ url_for('direct_delete_card', card_id=card.id) }}" class="btn btn-outline-danger mt-2" 
+                                   onclick="return confirm('Вы уверены, что хотите удалить эту карту? Это действие нельзя отменить!')">
+                                    <i class="bi bi-trash me-1"></i> Удалить карту
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Предпросмотр карты</h5>
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center" style="min-height: 480px; background-color: #f8f9fa;">
+                    <div class="user-card-item" style="transform: scale(1.2); transform-origin: center;">
+                        <div class="card {{ 'silver' if card and card.rarity == 2 else 'gold' if card and (card.rarity == 3 or card.rarity == 4 or card.rarity == 5) else 'bronze' }}" id="preview-card" style="--bg-image: url({{ url_for('static', filename='images/card_bg_' + ('silver' if card and card.rarity == 2 else 'gold' if card and (card.rarity == 3 or card.rarity == 4 or card.rarity == 5) else 'bronze') + '.png') }});">
+                            <div class="card-header">
+                                <div class="card-photo" id="preview-photo" style="--player-photo: url({{ url_for('static', filename=card.image if card and card.image else 'images/card-back.jpg') }}); --player-photo-position: {{ card.photo_position if card and card.photo_position else '50% 50%' }};"></div>
+                                <img src="{{ url_for('static', filename='images/logo_new_pa.png') }}" class="card-logo" alt="Logo">
+                            </div>
+                            <div class="card-body">
+                                <div class="card-title" id="preview-title">{{ card.title if card else 'SM' }}</div>
+                                <div class="card-name" id="preview-name">{{ card.name if card else 'Имя Игрока' }}</div>
+                                <div class="card-flag-container">
+                                    <img src="{{ url_for('static', filename='images/flags/' + (card.country_code|default('RU')|lower) + '.png') }}" class="card-flag" id="preview-flag" alt="Flag">
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pass card data to JavaScript as JSON string
+    window.cardDataJSON = `{
+        {% if card %}
+            "name": {{ card.name | tojson | safe }},
+            "rarity": {{ card.rarity }},
+            "isPrime": {{ 'true' if card.is_prime else 'false' }},
+            "basePoints": {{ card.base_points }},
+            "image": {% if card.image %}{{ url_for('static', filename=card.image) | tojson | safe }}{% else %}null{% endif %},
+            "description": {{ (card.description or '') | tojson | safe }}
+        {% else %}
+            "isNew": true
+        {% endif %}
+    }`;
+    
+    // Parse the JSON string to an object
+    try {
+        window.cardData = JSON.parse(window.cardDataJSON);
+    } catch (e) {
+        console.error('Error parsing card data:', e);
+        window.cardData = { isNew: true };
+    }
+</script>
+<script src="{{ url_for('static', filename='js/card-form.js') }}"></script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cards.css') }}?v=1.0.3">
+<style>
+    #preview-photo {
+        cursor: grab;
+    }
+    #preview-photo:active {
+        cursor: grabbing;
+    }
+</style>
+{% endblock %}

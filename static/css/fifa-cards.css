@@ -1,0 +1,344 @@
+/* FIFA Card Styles */
+.fifa-card {
+    position: relative;
+    width: 150px;
+    height: 220px;
+    margin: 0 auto;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    color: white;
+    font-family: 'Arial', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.fifa-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Player Image - на всю карточку */
+.player-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.player-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Overlay для текста поверх изображения */
+.card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5) 50%, transparent);
+    padding: 20px 15px;
+    z-index: 2;
+}
+
+/* Player Name */
+.player-name {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Card Rarity */
+.card-rarity {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.stars {
+    color: #ffd700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 3px rgba(255, 215, 0, 0.7);
+}
+
+.prime-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #ff4e50, #f9d423);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    display: block;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transform: rotate(10deg);
+    z-index: 10;
+}
+
+.team-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transform: rotate(-10deg);
+    z-index: 10;
+}
+
+/* Card Price */
+.card-price {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.price-value {
+    font-size: 18px;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.price-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+}
+
+/* Card Types по редкости */
+.fifa-card[data-rarity="1"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(189, 195, 199, 0.3), rgba(149, 165, 166, 0.3));
+    z-index: 2;
+    pointer-events: none;
+}
+
+.fifa-card[data-rarity="2"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(248, 196, 113, 0.3), rgba(243, 156, 18, 0.3));
+    z-index: 2;
+    pointer-events: none;
+}
+
+.fifa-card[data-rarity="3"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(93, 173, 226, 0.3), rgba(52, 152, 219, 0.3));
+    z-index: 2;
+    pointer-events: none;
+}
+
+.fifa-card[data-rarity="4"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(175, 122, 197, 0.3), rgba(142, 68, 173, 0.3));
+    z-index: 2;
+    pointer-events: none;
+}
+
+.fifa-card[data-rarity="5"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(236, 112, 99, 0.3), rgba(231, 76, 60, 0.3));
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Адаптация для карточек в сетке */
+.fifa-card-wrapper {
+    margin-bottom: 20px;
+    cursor: pointer;
+    position: relative;
+}
+
+/* Стили для карточек в команде */
+.team-fifa-card {
+    width: 120px;
+    height: 180px;
+}
+
+.team-fifa-card .player-name {
+    font-size: 16px;
+}
+
+.team-fifa-card .stars {
+    font-size: 16px;
+}
+
+.team-fifa-card .price-value {
+    font-size: 18px;
+}
+
+.team-fifa-card .price-label {
+    font-size: 12px;
+}
+
+.team-fifa-card .prime-badge {
+    font-size: 12px;
+    padding: 3px 6px;
+    top: 8px;
+    right: 8px;
+}
+
+/* Сетка карточек */
+.fifa-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.team-fifa-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+/* Контейнер для карточек с ограничением */
+.cards-container {
+    max-height: 350px;
+    overflow: hidden;
+    position: relative;
+    padding-bottom: 50px;
+}
+
+.cards-container.show-all {
+    max-height: none;
+}
+
+.show-more-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    text-align: center;
+    border-radius: 10px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 100;
+    position: relative;
+}
+
+.show-more-btn:hover {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+}
+
+/* Стили для меню действий с карточкой */
+.card-actions-menu {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 0 0 8px 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 100;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fifa-card-wrapper.show-actions .card-actions-menu {
+    transform: translateY(0);
+}
+
+.card-action-btn {
+    padding: 6px 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-delete {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.action-market {
+    background-color: #3498db;
+    color: white;
+}
+
+.action-sell {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.card-action-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.market-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transform: rotate(-10deg);
+    z-index: 10;
+}

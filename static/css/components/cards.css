@@ -1,0 +1,133 @@
+/* Card styles */
+.glass-card {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 0.75rem;
+}
+
+.glass-card-light {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(71, 85, 105, 0.3);
+    border-radius: 0.5rem;
+}
+
+/* Gradients */
+.gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-secondary {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.gradient-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.gradient-warning {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+/* Text gradients */
+.text-gradient {
+    background: linear-gradient(90deg, #60a5fa 0%, #c084fc 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Glow effects */
+.shadow-glow {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.shadow-glow-purple {
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+}
+
+/* Animations */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+    to {
+        box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+    }
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+.animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Card rarity styles */
+.card-common {
+    border: 1px solid #334155;
+}
+
+.card-rare {
+    border: 1px solid #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.card-epic {
+    border: 1px solid #8b5cf6;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+}
+
+.card-legendary {
+    border: 1px solid #f59e0b;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.7);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Pack opening animation */
+.pack-card {
+    transition: all 0.5s ease-out;
+    transform-style: preserve-3d;
+}
+
+.pack-card.flipped {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    backface-visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+}
+
+.card-front {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    transform: rotateY(180deg);
+}
+
+.card-back {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    background-image: url('/static/images/card-back.png');
+    background-size: cover;
+    background-position: center;
+}

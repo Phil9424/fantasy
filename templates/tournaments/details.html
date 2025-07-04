@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}Турнир: {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">{{ tournament.name }}</h2>
+                <div>
+                    {% for i in range(tournament.stars) %}
+                        <i class="bi bi-star-fill text-warning fs-4"></i>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Дата проведения:</strong> {{ tournament.start_time.strftime('%d.%m.%Y') }}</p>
+                    <p><strong>Статус регистрации:</strong> 
+                        {% if tournament.registration_open %}
+                            <span class="badge bg-success">Открыта</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Закрыта</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Статус турнира:</strong> 
+                        {% if tournament.is_completed %}
+                            <span class="badge bg-info">Завершен</span>
+                        {% elif tournament.is_active %}
+                            <span class="badge bg-primary">Активен</span>
+                        {% else %}
+                            <span class="badge bg-warning">Ожидает начала</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Количество участников:</strong> {{ tournament.results|length }}</p>
+                    {% if tournament.is_test %}
+                        <p><span class="badge bg-warning">Тестовый турнир</span></p>
+                    {% endif %}
+                    
+                    {% if not user_registered and tournament.registration_open %}
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
+                            <i class="bi bi-trophy"></i> Зарегистрировать команду
+                        </button>
+                    {% elif user_registered %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> Вы зарегистрированы на этот турнир
+                        </div>
+                    {% elif not tournament.registration_open %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Регистрация на турнир закрыта
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if tournament.is_completed %}
+        <!-- Для завершенных турниров показываем только результаты -->
+        <div class="card shadow-lg bg-dark text-white rounded-3 overflow-hidden">
+            <div class="card-header bg-success py-3">
+                <h3 class="mb-0 text-center fw-bold">Результаты турнира</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0">
+                        <thead>
+                            <tr class="bg-success bg-opacity-25">
+                                <th class="border-0 text-center py-3 fs-5">Место</th>
+                                <th class="border-0 text-center py-3 fs-5">Участник</th>
+                                <th class="border-0 text-center py-3 fs-5">Очки</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr class="{% if result.place <= 3 %}table-{{ ['success', 'info', 'warning'][result.place-1] }} bg-opacity-25{% endif %}">
+                                <td class="border-0 text-center py-3 fs-5 fw-bold">
+                                    {% if result.place <= 3 %}
+                                        {{ ['🥇', '🥈', '🥉'][result.place-1] }}
+                                    {% else %}
+                                        {{ result.place }}
+                                    {% endif %}
+                                </td>
+                                <td class="border-0 text-center py-3 fs-5 fw-light">{{ result.card.name }}</td>
+                                <td class="border-0 text-center py-3 fs-5">{{ result.score }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">Нет результатов</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Для незавершенных турниров показываем список участников -->
+        <div class="card shadow-lg bg-dark text-white rounded-3 overflow-hidden">
+            <div class="card-header bg-primary py-3">
+                <h3 class="mb-0 text-center fw-bold">Участники турнира ({{ participants|length }})</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if participants %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="bg-primary bg-opacity-25">
+                                    <th class="border-0 text-center py-3 fs-5">#</th>
+                                    <th class="border-0 text-center py-3 fs-5">Игрок</th>
+                                    <th class="border-0 text-center py-3 fs-5">Дата регистрации</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for participant in participants %}
+                                <tr>
+                                    <td class="border-0 text-center py-3 fs-5">{{ loop.index }}</td>
+                                    <td class="border-0 text-center py-3 fs-5">
+                                        <a href="{{ url_for('profile.view', user_id=participant.user.id) }}" class="text-white text-decoration-none">
+                                            {{ participant.user.username }}
+                                        </a>
+                                    </td>
+                                    <td class="border-0 text-center py-3 fs-5">
+                                        {{ participant.registered_at.strftime('%d.%m.%Y %H:%M') }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted p-4 text-center fs-5">Пока нет участников турнира</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Модальное окно для регистрации на турнир -->
+{% if not user_registered and tournament.registration_open and current_user.team %}
+<!-- Модальное окно подтверждения команды -->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="registerModalLabel">Регистрация на турнир "{{ tournament.name }}"</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="teamRegistrationForm" action="{{ url_for('tournaments.register_for_tournament', tournament_id=tournament.id) }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle"></i> Ваша текущая команда будет зарегистрирована на турнир:
+                    </div>
+                    
+                    <div class="team-cards mb-4">
+                        {% for i in range(1, 5) %}
+                            {% set card = current_user.team.get_slot_card(i) %}
+                            {% if card %}
+                                <div class="d-flex align-items-center mb-2 p-2 bg-dark rounded">
+                                    <span class="me-3">{{ i }}.</span>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-{{ card.card.rarity|lower }} me-2">{{ card.card.rarity }}</span>
+                                            <span class="me-2">{{ card.card.name }}</span>
+                                            {% if card.card.is_prime %}
+                                                <span class="badge bg-warning text-dark">PRIME</span>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">Уровень: {{ card.card.base_points }}</small>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="card{{ i }}_id" value="{{ card.id }}">
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    <p class="mb-0">Вы уверены, что хотите зарегистрировать эту команду на турнир?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Подтвердить регистрацию</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% elif not user_registered and tournament.registration_open %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i> Для участия в турнире у вас должна быть сформирована команда из 4 карт в вашем профиле.
+    <a href="{{ url_for('profile') }}" class="alert-link">Перейти в профиль</a>
+</div>
+{% endif %}
+
+{% if not user_registered and tournament.registration_open %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Автоматически показываем модальное окно при загрузке страницы
+    const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+    registerModal.show();
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+from app import create_app, db
+from app import create_admin as create_admin_func
+
+app = create_app()
+
+# Register CLI commands
+@app.cli.command('create-admin')
+def create_admin_command():
+    """CLI command to create an admin user"""
+    with app.app_context():
+        create_admin_func()
+        print("Admin user created successfully!")
+
+if __name__ == "__main__":
+    app.run(debug=True)

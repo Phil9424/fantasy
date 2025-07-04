@@ -1,0 +1,688 @@
+{% extends "base.html" %}
+
+{% block title %}Обновить команду - Mafia Fantasy{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v=1.0.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fifa-cards.css') }}?v=1.1.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/team-update.css') }}?v=1.1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<style>
+    :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --accent-color: #e74c3c;
+        --light-bg: #f8f9fa;
+        --dark-bg: #2c3e50;
+        --text-light: #f8f9fa;
+        --text-dark: #2c3e50;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+    }
+    
+    .team-container {
+        background-color: #1a2433;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .team-header {
+        background-color: #2980b9;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px 8px 0 0;
+        margin: -15px -15px 15px -15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .team-slots-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+        gap: 60px;
+        padding: 20px 10px;
+        overflow-x: auto;
+        width: 100%;
+    }
+    
+    .team-slot {
+        width: 140px;
+        height: 190px;
+        background-color: rgba(52, 152, 219, 0.1);
+        border: 2px dashed #3498db;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: #3498db;
+        transition: all 0.3s ease;
+        position: relative;
+        flex-shrink: 0;
+    }
+    
+    .team-slot.drag-hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
+        background-color: rgba(52, 152, 219, 0.2);
+    }
+    
+    .slot-number {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background-color: #3498db;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 10;
+    }
+    
+    .empty-slot-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .empty-slot-text {
+        font-size: 12px;
+        text-align: center;
+        padding: 0 5px;
+    }
+    
+    .slot-status {
+        position: absolute;
+        bottom: 5px;
+        width: 90%;
+        text-align: center;
+        font-size: 11px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 3px 0;
+        border-radius: 4px;
+        z-index: 10;
+    }
+    
+    /* Компактные FIFA карты для команды */
+    .team-slot .fifa-card-wrapper {
+        transform: scale(0.85);
+        margin: -15px;
+    }
+    
+    /* Стили для компактного отображения карт */
+    .compact-view .fifa-card-wrapper {
+        transform: scale(0.9);
+        margin: -10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4" id="update-team-page">
+    <div class="card shadow mb-4 border-0">
+        <div class="card-header p-3 border-bottom bg-dark text-white">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center">
+                    <span class="me-3 fw-bold fs-5">Сортировка:</span>
+                    <div class="btn-group btn-group-lg shadow" role="group">
+                        <button type="button" class="btn btn-primary sort-btn active" data-sort="name-asc">
+                            <i class="bi bi-sort-alpha-down me-2"></i> Имя
+                        </button>
+                        <button type="button" class="btn btn-outline-light sort-btn" data-sort="power-desc">
+                            <i class="bi bi-sort-numeric-down-alt me-2"></i> Сила
+                        </button>
+                        <button type="button" class="btn btn-outline-light sort-btn" data-sort="rarity-desc">
+                            <i class="bi bi-stars me-2"></i> Редкость
+                        </button>
+                    </div>
+                </div>
+                <div class="btn-group btn-group-lg shadow" role="group">
+                    <button type="button" class="btn btn-primary active" id="gridViewBtn">
+                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-light" id="listViewBtn">
+                        <i class="bi bi-list-ul"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-4" id="cardsList">
+            <div id="noResultsMessage" class="text-center py-5" style="display: none;">
+                <div class="p-4 rounded-lg bg-light border">
+                    <i class="bi bi-search fs-1 text-primary mb-3 d-block"></i>
+                    <h4 class="mb-2">Не найдено карт</h4>
+                    <p class="text-muted mb-0">Попробуйте изменить поисковый запрос или сбросить фильтры</p>
+                </div>
+            </div>
+            
+            <!-- Компактная команда -->
+            <div class="team-container">
+                <div class="team-header">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Моя команда</h5>
+                    <span class="badge bg-light text-primary rounded-pill">{{ team_cards|length }}/4</span>
+                </div>
+                <div class="team-slots-wrapper" id="teamContainer">
+                    <!-- Слот 1 -->
+                    <div class="team-slot" id="slot2" data-slot="2" ondrop="drop(event, this)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="slot-number">2</div>
+                        {% if user.team and user.team.slot2_card_id %}
+                            {% for card in team_cards %}
+                                {% if card.id == user.team.slot2_card_id %}
+                                    <div class="fifa-card-wrapper" data-card-id="{{ card.id }}" draggable="true" ondragstart="dragStart(event, '{{ card.id }}')">
+                                        <div class="fifa-card" data-rarity="{{ card.card.rarity }}">
+                                            {% if card.card.is_prime %}
+                                                <span class="prime-badge">ПРАЙМ</span>
+                                            {% endif %}
+                                            
+                                            <span class="slot-label">СЛОТ 2</span>
+                                            
+                                            <div class="player-image-container">
+                                                {% if card.card.image %}
+                                                    <img src="{{ url_for('static', filename=card.card.image) }}" class="player-image" alt="{{ card.card.name }}" onerror="handleImageError(this)">
+                                                {% else %}
+                                                    <div class="default-player-image">
+                                                        <span>{{ card.card.name[:2]|upper }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="card-overlay">
+                                                <div class="player-name">{{ card.card.name }}</div>
+                                                <div class="card-rarity">
+                                                    <span class="stars">{{ '★' * card.card.rarity }}{{ '☆' * (5 - card.card.rarity) }}</span>
+                                                </div>
+                                                <div class="card-price">
+                                                    <div class="price-value">{{ card.card.base_points }}</div>
+                                                    <div class="price-label">ЦЕНА</div>
+                                                </div>
+                                            </div>
+                                            <div class="card-actions-menu">
+                                                <button class="card-action-btn action-remove" onclick="removeFromTeam('{{ card.id }}')">Удалить из команды</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slot-status">Слот занят</div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-slot-icon">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
+                            <div class="empty-slot-text">Перетащите карту сюда</div>
+                            <div class="slot-status">Слот свободен</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Слот 2 -->
+                    <div class="team-slot" id="slot1" data-slot="1" ondrop="drop(event, this)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="slot-number">1</div>
+                        {% if user.team and user.team.slot1_card_id %}
+                            {% for card in team_cards %}
+                                {% if card.id == user.team.slot1_card_id %}
+                                    <div class="fifa-card-wrapper" data-card-id="{{ card.id }}" draggable="true" ondragstart="dragStart(event, '{{ card.id }}')">
+                                        <div class="fifa-card" data-rarity="{{ card.card.rarity }}">
+                                            {% if card.card.is_prime %}
+                                                <span class="prime-badge">ПРАЙМ</span>
+                                            {% endif %}
+                                            
+                                            <span class="slot-label">СЛОТ 1</span>
+                                            
+                                            <div class="player-image-container">
+                                                {% if card.card.image %}
+                                                    <img src="{{ url_for('static', filename=card.card.image) }}" class="player-image" alt="{{ card.card.name }}" onerror="handleImageError(this)">
+                                                {% else %}
+                                                    <div class="default-player-image">
+                                                        <span>{{ card.card.name[:2]|upper }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="card-overlay">
+                                                <div class="player-name">{{ card.card.name }}</div>
+                                                <div class="card-rarity">
+                                                    <span class="stars">{{ '★' * card.card.rarity }}{{ '☆' * (5 - card.card.rarity) }}</span>
+                                                </div>
+                                                <div class="card-price">
+                                                    <div class="price-value">{{ card.card.base_points }}</div>
+                                                    <div class="price-label">ЦЕНА</div>
+                                                </div>
+                                            </div>
+                                            <div class="card-actions-menu">
+                                                <button class="card-action-btn action-remove" onclick="removeFromTeam('{{ card.id }}')">Удалить из команды</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slot-status">Слот занят</div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-slot-icon">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
+                            <div class="empty-slot-text">Перетащите карту сюда</div>
+                            <div class="slot-status">Слот свободен</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Слот 3 -->
+                    <div class="team-slot" id="slot4" data-slot="4" ondrop="drop(event, this)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="slot-number">4</div>
+                        {% if user.team and user.team.slot4_card_id %}
+                            {% for card in team_cards %}
+                                {% if card.id == user.team.slot4_card_id %}
+                                    <div class="fifa-card-wrapper" data-card-id="{{ card.id }}" draggable="true" ondragstart="dragStart(event, '{{ card.id }}')">
+                                        <div class="fifa-card" data-rarity="{{ card.card.rarity }}">
+                                            {% if card.card.is_prime %}
+                                                <span class="prime-badge">ПРАЙМ</span>
+                                            {% endif %}
+                                            
+                                            <span class="slot-label">СЛОТ 4</span>
+                                            
+                                            <div class="player-image-container">
+                                                {% if card.card.image %}
+                                                    <img src="{{ url_for('static', filename=card.card.image) }}" class="player-image" alt="{{ card.card.name }}" onerror="handleImageError(this)">
+                                                {% else %}
+                                                    <div class="default-player-image">
+                                                        <span>{{ card.card.name[:2]|upper }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="card-overlay">
+                                                <div class="player-name">{{ card.card.name }}</div>
+                                                <div class="card-rarity">
+                                                    <span class="stars">{{ '★' * card.card.rarity }}{{ '☆' * (5 - card.card.rarity) }}</span>
+                                                </div>
+                                                <div class="card-price">
+                                                    <div class="price-value">{{ card.card.base_points }}</div>
+                                                    <div class="price-label">ЦЕНА</div>
+                                                </div>
+                                            </div>
+                                            <div class="card-actions-menu">
+                                                <button class="card-action-btn action-remove" onclick="removeFromTeam('{{ card.id }}')">Удалить из команды</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slot-status">Слот занят</div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-slot-icon">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
+                            <div class="empty-slot-text">Перетащите карту сюда</div>
+                            <div class="slot-status">Слот свободен</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Слот 4 -->
+                    <div class="team-slot" id="slot3" data-slot="3" ondrop="drop(event, this)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="slot-number">3</div>
+                        {% if user.team and user.team.slot3_card_id %}
+                            {% for card in team_cards %}
+                                {% if card.id == user.team.slot3_card_id %}
+                                    <div class="fifa-card-wrapper" data-card-id="{{ card.id }}" draggable="true" ondragstart="dragStart(event, '{{ card.id }}')">
+                                        <div class="fifa-card" data-rarity="{{ card.card.rarity }}">
+                                            {% if card.card.is_prime %}
+                                                <span class="prime-badge">ПРАЙМ</span>
+                                            {% endif %}
+                                            
+                                            <span class="slot-label">СЛОТ 3</span>
+                                            
+                                            <div class="player-image-container">
+                                                {% if card.card.image %}
+                                                    <img src="{{ url_for('static', filename=card.card.image) }}" class="player-image" alt="{{ card.card.name }}" onerror="handleImageError(this)">
+                                                {% else %}
+                                                    <div class="default-player-image">
+                                                        <span>{{ card.card.name[:2]|upper }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="card-overlay">
+                                                <div class="player-name">{{ card.card.name }}</div>
+                                                <div class="card-rarity">
+                                                    <span class="stars">{{ '★' * card.card.rarity }}{{ '☆' * (5 - card.card.rarity) }}</span>
+                                                </div>
+                                                <div class="card-price">
+                                                    <div class="price-value">{{ card.card.base_points }}</div>
+                                                    <div class="price-label">ЦЕНА</div>
+                                                </div>
+                                            </div>
+                                            <div class="card-actions-menu">
+                                                <button class="card-action-btn action-remove" onclick="removeFromTeam('{{ card.id }}')">Удалить из команды</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slot-status">Слот занят</div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-slot-icon">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
+                            <div class="empty-slot-text">Перетащите карту сюда</div>
+                            <div class="slot-status">Слот свободен</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Доступные карты</h5>
+                    <a href="{{ url_for('shop') }}" class="btn btn-sm btn-light">
+                        <i class="bi bi-cart-plus"></i> Купить карты
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 animate__animated animate__fadeIn compact-view" id="cardsContainer">
+                        {% for user_card in user_cards %}
+                            <div class="col card-item" 
+                                 data-name="{{ user_card.card.name|lower }}" 
+                                 data-rarity="{{ user_card.card.rarity }}" 
+                                 data-power="{{ user_card.card.base_points }}" 
+                                 data-card-id="{{ user_card.id }}">
+                                <div class="fifa-card-wrapper" data-card-id="{{ user_card.id }}" draggable="true" ondragstart="dragStart(event, '{{ user_card.id }}')">
+                                    <div class="fifa-card" data-rarity="{{ user_card.card.rarity }}">
+                                        {% if user_card.card.is_prime %}
+                                            <span class="prime-badge">ПРАЙМ</span>
+                                        {% endif %}
+                                        
+                                        <div class="player-image-container">
+                                            {% if user_card.card.image %}
+                                                <img src="{{ url_for('static', filename=user_card.card.image) }}" class="player-image" alt="{{ user_card.card.name }}" onerror="handleImageError(this)">
+                                            {% else %}
+                                                <div class="default-player-image">
+                                                    <span>{{ user_card.card.name[:2]|upper }}</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-overlay">
+                                            <div class="player-name">{{ user_card.card.name }}</div>
+                                            <div class="card-rarity">
+                                                <span class="stars">{{ '★' * user_card.card.rarity }}{{ '☆' * (5 - user_card.card.rarity) }}</span>
+                                            </div>
+                                            <div class="card-price">
+                                                <div class="price-value">{{ user_card.card.base_points }}</div>
+                                                <div class="price-label">ЦЕНА</div>
+                                            </div>
+                                        </div>
+                                        <div class="card-actions-menu">
+                                            <button class="card-action-btn action-add" onclick="addToTeam('{{ user_card.id }}')">Добавить в команду</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-12 text-center py-5">
+                                <div class="p-4 rounded-lg bg-light border">
+                                    <i class="bi bi-card-image fs-1 text-primary mb-3 d-block"></i>
+                                    <h4 class="mb-2">У вас нет доступных карт</h4>
+                                    <p class="text-muted mb-0">Приобретите карты в магазине, чтобы добавить их в команду</p>
+                                    <a href="{{ url_for('shop') }}" class="btn btn-primary mt-3">
+                                        <i class="bi bi-cart-plus me-2"></i>Перейти в магазин
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to handle image loading errors
+    function handleImageError(img) {
+        img.onerror = null;
+        img.src = "{{ url_for('static', filename='images/default_card.jpg') }}";
+        return true;
+    }
+    
+    // Drag and drop functions
+    function allowDrop(event) {
+        event.preventDefault();
+        if (event.currentTarget.classList.contains('team-slot')) {
+            event.currentTarget.classList.add('drag-hover');
+        }
+    }
+    
+    function dragLeave(event) {
+        event.currentTarget.classList.remove('drag-hover');
+    }
+    
+    function dragStart(event, cardId) {
+        event.dataTransfer.setData("cardId", cardId);
+    }
+    
+    function drop(event, targetSlot) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('drag-hover');
+        
+        const cardId = event.dataTransfer.getData("cardId");
+        if (!cardId) return;
+        
+        // Get the slot number
+        let slotNumber = targetSlot.getAttribute('data-slot');
+        
+        // Add card to team with specific slot
+        addToTeam(cardId, slotNumber);
+    }
+    
+    // Function to add a card to the team
+    function addToTeam(cardId, slot = null) {
+        // Disable buttons to prevent double-clicks
+        document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        
+        fetch('{{ url_for("update_team") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                action: 'add',
+                card_id: cardId,
+                slot: slot
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Re-enable buttons
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            
+            if (data.success) {
+                // Show success message
+                alert(data.message);
+                // Reload the page to reflect changes
+                window.location.reload();
+            } else {
+                // Show error message
+                alert(data.error || 'Произошла ошибка при добавлении карты в команду');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Re-enable buttons
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            alert('Произошла ошибка при добавлении карты в команду');
+        });
+    }
+    
+    // Function to remove a card from the team
+    function removeFromTeam(cardId, event = null) {
+        if (event) {
+            event.stopPropagation();
+        }
+        
+        // Disable buttons to prevent double-clicks
+        document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        
+        fetch('{{ url_for("update_team") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                action: 'remove',
+                card_id: cardId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Re-enable buttons
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            
+            if (data.success) {
+                // Show success message
+                alert(data.message);
+                // Reload the page to reflect changes
+                window.location.reload();
+            } else {
+                // Show error message
+                alert(data.error || 'Произошла ошибка при удалении карты из команды');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Re-enable buttons
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            alert('Произошла ошибка при удалении карты из команды');
+        });
+    }
+    
+    // Sort cards function
+    function sortCards(sortType) {
+        const cardsContainer = document.getElementById('cardsContainer');
+        if (!cardsContainer) return;
+        
+        const cards = Array.from(cardsContainer.querySelectorAll('.card-item'));
+        
+        // Add fade-out animation to container
+        cardsContainer.classList.remove('animate__fadeIn');
+        cardsContainer.classList.add('animate__fadeOut');
+        
+        // Remove active class from all sort buttons and update styles
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-light');
+        });
+        
+        // Add active class to clicked button and update style
+        const activeBtn = document.querySelector(`.sort-btn[data-sort="${sortType}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('btn-outline-light');
+            activeBtn.classList.add('btn-primary');
+        }
+        
+        // Sort cards based on sort type
+        cards.sort((a, b) => {
+            if (sortType === 'name-asc') {
+                return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+            } else if (sortType === 'power-desc') {
+                return parseInt(b.getAttribute('data-power')) - parseInt(a.getAttribute('data-power'));
+            } else if (sortType === 'rarity-desc') {
+                return parseInt(b.getAttribute('data-rarity')) - parseInt(a.getAttribute('data-rarity'));
+            }
+            return 0;
+        });
+        
+        // Wait for fade out animation to complete
+        setTimeout(() => {
+            // Reappend cards in sorted order
+            cards.forEach(card => {
+                cardsContainer.appendChild(card);
+            });
+            
+            // Add fade-in animation
+            cardsContainer.classList.remove('animate__fadeOut');
+            cardsContainer.classList.add('animate__fadeIn');
+        }, 300);
+    }
+    
+    // Main initialization when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Отладочная информация
+        console.log('Команда пользователя:');
+        /* {% if user.team %} */
+            console.log('Слот 1:', '{{ user.team.slot1_card_id }}');
+            console.log('Слот 2:', '{{ user.team.slot2_card_id }}');
+            console.log('Слот 3:', '{{ user.team.slot3_card_id }}');
+            console.log('Слот 4:', '{{ user.team.slot4_card_id }}');
+        /* {% endif %} */
+        
+        console.log('Team cards:', /* {{ team_cards|length }} */ 0);
+        /* {% for card in team_cards %}
+            console.log('Team card ID {{ card.id }}:', '{{ card.card.name }}');
+        {% endfor %} */
+        
+        // Sort button event listeners
+        document.querySelectorAll('.sort-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const sortType = this.getAttribute('data-sort');
+                sortCards(sortType);
+            });
+        });
+        
+        // View toggle functionality
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        const cardsContainer = document.getElementById('cardsContainer');
+        
+        if (gridViewBtn && listViewBtn && cardsContainer) {
+            gridViewBtn.addEventListener('click', function() {
+                cardsContainer.classList.remove('row-cols-1');
+                cardsContainer.classList.add('row-cols-md-2', 'row-cols-lg-3', 'row-cols-xl-4');
+                gridViewBtn.classList.add('active');
+                gridViewBtn.classList.add('btn-primary');
+                gridViewBtn.classList.remove('btn-outline-light');
+                listViewBtn.classList.remove('active');
+                listViewBtn.classList.remove('btn-primary');
+                listViewBtn.classList.add('btn-outline-light');
+            });
+            
+            listViewBtn.addEventListener('click', function() {
+                cardsContainer.classList.add('row-cols-1');
+                cardsContainer.classList.remove('row-cols-md-2', 'row-cols-lg-3', 'row-cols-xl-4');
+                listViewBtn.classList.add('active');
+                listViewBtn.classList.add('btn-primary');
+                listViewBtn.classList.remove('btn-outline-light');
+                gridViewBtn.classList.remove('active');
+                gridViewBtn.classList.remove('btn-primary');
+                gridViewBtn.classList.add('btn-outline-light');
+            });
+        }
+        
+        // Show card actions on hover
+        document.querySelectorAll('.fifa-card-wrapper').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                const actionsMenu = this.querySelector('.card-actions-menu');
+                if (actionsMenu) {
+                    actionsMenu.style.opacity = '1';
+                    actionsMenu.style.transform = 'translateY(0)';
+                }
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                const actionsMenu = this.querySelector('.card-actions-menu');
+                if (actionsMenu) {
+                    actionsMenu.style.opacity = '0';
+                    actionsMenu.style.transform = 'translateY(10px)';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

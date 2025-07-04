@@ -1,0 +1,126 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Создание тестового турнира{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <h2 class="mb-0">Создание тестового турнира</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Тестовый турнир будет автоматически заполнен 10 случайными игроками с предопределенными результатами.
+                    </div>
+                    
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Название турнира</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Дата проведения</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="stars" class="form-label">Количество звезд (1-5)</label>
+                            <select class="form-select" id="stars" name="stars" required>
+                                <option value="1">1 звезда</option>
+                                <option value="2">2 звезды</option>
+                                <option value="3">3 звезды</option>
+                                <option value="4">4 звезды</option>
+                                <option value="5">5 звезд</option>
+                            </select>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Тестовые результаты</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Место</th>
+                                                <th>Очки</th>
+                                                <th>Награда</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="table-success">
+                                                <td>1</td>
+                                                <td>6.4</td>
+                                                <td>100 очков</td>
+                                            </tr>
+                                            <tr class="table-info">
+                                                <td>2</td>
+                                                <td>5.5</td>
+                                                <td>50 очков</td>
+                                            </tr>
+                                            <tr class="table-warning">
+                                                <td>3</td>
+                                                <td>5.4</td>
+                                                <td>30 очков</td>
+                                            </tr>
+                                            <tr>
+                                                <td>4</td>
+                                                <td>5.2</td>
+                                                <td>20 очков</td>
+                                            </tr>
+                                            <tr>
+                                                <td>5</td>
+                                                <td>4.9</td>
+                                                <td>-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>6</td>
+                                                <td>4.5</td>
+                                                <td>-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>7</td>
+                                                <td>4.15</td>
+                                                <td>-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>8</td>
+                                                <td>3.0</td>
+                                                <td>-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>9</td>
+                                                <td>2.9</td>
+                                                <td>-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>10</td>
+                                                <td>0.55</td>
+                                                <td>-</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('tournaments.admin_tournaments') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Назад к списку
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-save"></i> Создать тестовый турнир
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

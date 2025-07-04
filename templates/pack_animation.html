@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Открытие пака - Фэнтези Лига Мафии{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h1 class="h4 mb-0">Открытие пака</h1>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <h2 class="h3 mb-3">Открываем карточки!</h2>
+                        <p class="lead">Нажимайте на карточку, чтобы открыть следующую</p>
+                    </div>
+                    
+                    <div id="card-container" class="position-relative">
+                        <div id="confetti-canvas" class="position-absolute top-0 start-0 w-100 h-100" style="z-index: 10; pointer-events: none;"></div>
+                        
+                        <div class="d-flex justify-content-center">
+                            <div id="current-card" class="card-reveal">
+                                <!-- Здесь будет отображаться текущая карточка -->
+                                <div class="card-placeholder">
+                                    <div class="card-back">
+                                        <img src="{{ url_for('static', filename='images/card-back.svg') }}" alt="Карта" class="img-fluid">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="progress mb-3">
+                                <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0/5</div>
+                            </div>
+                            
+                            <button id="skip-animation" class="btn btn-outline-secondary">
+                                <i class="bi bi-fast-forward"></i> Пропустить анимацию
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="all-cards" class="row g-4 justify-content-center mt-4" style="display: none;">
+                        {% for card in cards %}
+                        <div class="col-md-4 col-sm-6 card-reveal">
+                            <div class="fifa-card" data-rarity="{{ card.rarity }}">
+                                {% if card.is_prime %}
+                                <span class="prime-badge">ПРАЙМ</span>
+                                {% endif %}
+                                <div class="player-image-container">
+                                    <img src="{{ url_for('static', filename='uploads/' + card.image) }}" class="player-image" alt="{{ card.name }}">
+                                </div>
+                                <div class="card-overlay">
+                                    <div class="player-name">{{ card.name }}</div>
+                                    <div class="card-rarity">
+                                        <span class="stars">{{ '★' * card.rarity }}</span>
+                                    </div>
+                                    <div class="card-price">
+                                        <div class="price-value">{{ card.base_points }}</div>
+                                        <div class="price-label">ЦЕНА</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mt-5">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary me-2">
+                            <i class="bi bi-person me-1"></i> В личный кабинет
+                        </a>
+                        <a href="{{ url_for('shop') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-shop me-1"></i> Вернуться в магазин
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/cards.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fifa-cards.css') }}?v=1.0.0">
+<style>
+/* Стили для карт */
+.mafia-card-rarity {
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    color: gold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.prime-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: #dc3545;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.card-back {
+    background-color: #f8f9fa;
+    transform: rotateY(0deg);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-placeholder {
+    width: 250px;
+    height: 350px;
+    margin: 0 auto;
+}
+
+.card-reveal {
+    opacity: 0;
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Стили для прогресс-бара */
+.progress {
+    height: 10px;
+    border-radius: 5px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+/* Стили для эффекта свечения редких карт */
+.mafia-card[data-rarity="4"], .mafia-card[data-rarity="5"], .mafia-card[data-prime="true"] {
+    animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 5px -5px #ffeb3b;
+    }
+    to {
+        box-shadow: 0 0 20px 5px #ffeb3b;
+    }
+}
+
+/* Стили для прайм-карт */
+.mafia-card[data-prime="true"] {
+    animation: primeglow 2s infinite alternate;
+}
+
+@keyframes primeglow {
+    from {
+        box-shadow: 0 0 5px -5px #ff0000;
+    }
+    to {
+        box-shadow: 0 0 20px 5px #ff0000;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<script>
+// Create a JSON string of card data from the server and parse it in JavaScript
+const cardsDataJson = '{{ cards|tojson|safe }}';
+const cardsData = JSON.parse(cardsDataJson);
+
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Функция для перемешивания массива
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+    
+    // Перемешиваем карты для случайного порядка
+    shuffleArray(cardsData);
+    
+    const currentCardElement = document.getElementById('current-card');
+    const progressBar = document.getElementById('progress-bar');
+    const skipButton = document.getElementById('skip-animation');
+    const allCardsContainer = document.getElementById('all-cards');
+    
+    const totalCards = cardsData.length;
+    let currentCardIndex = 0;
+    
+    // Функция для запуска специальных эффектов
+    function playSpecialEffects(rarity, isPrime) {
+        // Настройки конфетти в зависимости от редкости
+        let colors = ['#FFD700', '#FFA500'];
+        let particleCount = 50;
+        
+        if (isPrime) {
+            // Для прайм-карт - особые эффекты
+            colors = ['#FF0000', '#FF4500', '#FFD700'];
+            particleCount = 100;
+        } else if (rarity >= 4) {
+            // Для редких карт - средние эффекты
+            colors = ['#FFD700', '#FFA500', '#FF8C00'];
+            particleCount = 75;
+        }
+        
+        // Запускаем конфетти
+        confetti({
+            particleCount,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors,
+            zIndex: 1000
+        });
+    }
+    
+    // Функция для отображения текущей карты
+    function showCurrentCard() {
+        // Если все карты показаны, показываем итоговый экран
+        if (currentCardIndex >= totalCards) {
+            allCardsContainer.style.display = 'flex';
+            currentCardElement.style.display = 'none';
+            progressBar.parentElement.style.display = 'none';
+            skipButton.style.display = 'none';
+            return;
+        }
+        
+        // Обновляем прогресс-бар
+        const progress = Math.round((currentCardIndex / totalCards) * 100);
+        progressBar.style.width = progress + '%';
+        progressBar.setAttribute('aria-valuenow', progress);
+        progressBar.textContent = currentCardIndex + '/' + totalCards;
+        
+        // Очищаем контейнер текущей карты
+        currentCardElement.innerHTML = '';
+        
+        // Получаем данные текущей карты
+        const card = cardsData[currentCardIndex];
+        
+        // Создаем контейнер для карты с рубашкой и лицевой стороной
+        const cardContainer = document.createElement('div');
+        cardContainer.className = 'card-flip-container';
+        cardContainer.style.cursor = 'pointer';
+        
+        // Рубашка карты
+        const cardBack = document.createElement('div');
+        cardBack.className = 'card-back';
+        cardBack.innerHTML = `<img src="{{ url_for('static', filename='images/card-back.svg') }}" alt="Карта" class="img-fluid">`;
+        
+        // Лицевая сторона карты (скрыта изначально)
+        const cardFront = document.createElement('div');
+        cardFront.className = 'fifa-card';
+        cardFront.setAttribute('data-rarity', card.rarity);
+        cardFront.style.display = 'none';
+        cardFront.style.backgroundColor = 'white';
+        cardFront.style.transform = 'rotateY(180deg)';
+        cardFront.style.transition = 'transform 0.6s';
+        cardFront.style.display = 'none'; // Изначально скрыта
+        cardFront.style.display = 'flex';
+        cardFront.style.flexDirection = 'column';
+        
+        if (card.isPrime) {
+            cardFront.classList.add('prime');
+        }
+        
+        // Создаем контейнер для изображения
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'pack-card-image';
+        
+        // Добавляем изображение карты
+        const cardImage = document.createElement('img');
+        cardImage.src = card.image;
+        cardImage.alt = card.name;
+        
+        // Добавляем звездочки редкости
+        const rarityStars = document.createElement('span');
+        rarityStars.className = 'pack-card-rarity';
+        rarityStars.textContent = '★'.repeat(card.rarity) + '☆'.repeat(5 - card.rarity);
+        
+        // Добавляем значок ПРАЙМ, если нужно
+        if (card.isPrime) {
+            const primeBadge = document.createElement('span');
+            primeBadge.className = 'pack-card-prime-badge';
+            primeBadge.textContent = 'ПРАЙМ';
+            imageContainer.appendChild(primeBadge);
+        }
+        
+        // Собираем контейнер с изображением
+        imageContainer.appendChild(cardImage);
+        imageContainer.appendChild(rarityStars);
+        
+        // Создаем информационную часть карточки
+        const cardInfo = document.createElement('div');
+        cardInfo.className = 'pack-card-info';
+        
+        // Добавляем название карты
+        const cardName = document.createElement('h3');
+        cardName.className = 'pack-card-name';
+        cardName.textContent = card.name;
+        
+        // Создаем контейнер для деталей карты
+        const cardDetails = document.createElement('div');
+        cardDetails.className = 'pack-card-details';
+        
+        // Добавляем тип карты (редкость)
+        const cardType = document.createElement('span');
+        cardType.className = 'pack-card-type';
+        cardType.textContent = card.rarityName;
+        
+        // Добавляем очки
+        const cardPoints = document.createElement('span');
+        cardPoints.className = 'pack-card-points';
+        cardPoints.textContent = card.basePoints + ' очков';
+        
+        // Собираем детали карты
+        cardDetails.appendChild(cardType);
+        cardDetails.appendChild(cardPoints);
+        
+        // Собираем информационную часть
+        cardInfo.appendChild(cardName);
+        cardInfo.appendChild(cardDetails);
+        
+        // Собираем лицевую сторону карты
+        cardFront.appendChild(imageContainer);
+        cardFront.appendChild(cardInfo);
+        
+        // Добавляем карты в контейнер
+        cardContainer.appendChild(cardBack);
+        cardContainer.appendChild(cardFront);
+        currentCardElement.appendChild(cardContainer);
+        
+        // Добавляем подсказку
+        const hintText = document.createElement('div');
+        hintText.className = 'text-center mt-2';
+        hintText.innerHTML = '<p class="text-muted small">Нажмите на карту, чтобы перевернуть её</p>';
+        currentCardElement.appendChild(hintText);
+        
+        // Добавляем обработчик клика для двухэтапного переворачивания
+        let isRevealed = false;
+        cardContainer.addEventListener('click', function() {
+            if (!isRevealed) {
+                // Первый клик - скрываем рубашку и показываем лицевую сторону
+                cardBack.style.display = 'none';
+                cardFront.style.display = 'block';
+                cardFront.style.transform = 'rotateY(0deg)';
+                isRevealed = true;
+                
+                // Меняем подсказку
+                hintText.innerHTML = '<p class="text-muted small">Нажмите ещё раз, чтобы перейти к следующей карте</p>';
+                
+                // Запускаем эффекты для редких и прайм карт
+                if (card.rarity >= 4 || card.isPrime) {
+                    playSpecialEffects(card.rarity, card.isPrime);
+                }
+            } else {
+                // Второй клик - переходим к следующей карте
+                currentCardIndex++;
+                showCurrentCard();
+            }
+        });
+        progressBar.parentElement.style.display = 'block';
+        skipButton.style.display = 'inline-block';
+    }
+    
+    // Обработчик для кнопки пропуска анимации
+    skipButton.addEventListener('click', function() {
+        allCardsContainer.style.display = 'flex';
+        currentCardElement.style.display = 'none';
+        progressBar.parentElement.style.display = 'none';
+        skipButton.style.display = 'none';
+    });
+    
+    // Начинаем показ карт
+    showCurrentCard();
+});
+</script>
+{% endblock %}
+
+

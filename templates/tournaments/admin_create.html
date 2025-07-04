@@ -1,0 +1,57 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Создание турнира{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">Создание нового турнира</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Название турнира</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Дата проведения</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="stars" class="form-label">Количество звезд (1-5)</label>
+                            <select class="form-select" id="stars" name="stars" required>
+                                <option value="1">1 звезда</option>
+                                <option value="2">2 звезды</option>
+                                <option value="3">3 звезды</option>
+                                <option value="4">4 звезды</option>
+                                <option value="5">5 звезд</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_test" name="is_test">
+                            <label class="form-check-label" for="is_test">Тестовый турнир</label>
+                            <div class="form-text">Отметьте, если это тестовый турнир</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('tournaments.admin_tournaments') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Назад к списку
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Создать турнир
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

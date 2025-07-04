@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Магазин - Фэнтези Лига Мафии{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/cards.css') }}" rel="stylesheet">
+<style>
+    .cards-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }
+    
+    .card-container {
+        width: 275.35px;
+        height: 425px;
+        margin-bottom: 20px;
+    }
+    
+    .card-img-top {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .shop-pack {
+        transition: transform 0.3s ease;
+    }
+    
+    .shop-pack:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .pack-badge {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .pack-price {
+        font-weight: bold;
+        font-size: 1.2rem;
+        color: #ffc107;
+    }
+    
+    .pack-buy-btn {
+        width: 100%;
+        margin-top: auto;
+    }
+    
+    .pack-details {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .pack-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    @keyframes cardReveal {
+        0% {
+            transform: scale(0.1) rotate(-10deg);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.1) rotate(5deg);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1) rotate(0);
+            opacity: 1;
+        }
+    }
+    
+    .card-reveal {
+        animation: cardReveal 0.8s ease-out forwards;
+    }
+    
+    .card-reveal:nth-child(1) { animation-delay: 0.1s; }
+    .card-reveal:nth-child(2) { animation-delay: 0.3s; }
+    .card-reveal:nth-child(3) { animation-delay: 0.5s; }
+    .card-reveal:nth-child(4) { animation-delay: 0.7s; }
+    .card-reveal:nth-child(5) { animation-delay: 0.9s; }
+    
+    .mafia-card {
+        background: linear-gradient(135deg, #1a1a1a, #333);
+        color: white;
+        border: none;
+    }
+    
+    .pack-opening-animation {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">Магазин карт</h1>
+                <div>
+                    <span class="badge bg-warning text-dark p-2 fs-6">
+                        <i class="bi bi-coin me-1"></i> {{ current_user.coins|default(0) }} монет
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Packs Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="h5 mb-0">Пакеты карт</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for pack in packs %}
+                        {% if pack.is_active %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shop-pack">
+                                <div class="position-relative p-3">
+                                    <div class="text-center mb-2">
+                                        {% if pack.min_rarity >= 4 %}
+                                        <span class="badge bg-warning text-dark pack-badge">Легендарный</span>
+                                        {% elif pack.min_rarity >= 3 %}
+                                        <span class="badge bg-primary pack-badge">Премиум</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary pack-badge">Базовый</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ pack.name }}</h5>
+                                    <p class="card-text">{{ pack.description }}</p>
+                                    <div class="mt-auto">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="badge bg-{{ 'warning' if pack.rarity == 'rare' else 'info' if pack.rarity == 'uncommon' else 'success' }} pack-badge">
+                                                {{ 'Редкий' if pack.rarity == 'rare' else 'Необычный' if pack.rarity == 'uncommon' else 'Обычный' }}
+                                            </span>
+                                            <span class="pack-price">{{ pack.price }} <i class="fas fa-coins"></i></span>
+                                        </div>
+                                        <a href="{{ url_for('open_pack', pack_id=pack.id) }}" class="btn btn-primary pack-buy-btn">
+                                            <i class="fas fa-shopping-cart me-2"></i>Купить за {{ pack.price }} монет
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Market Cards Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 mb-0">Карты на рынке</h2>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Вернуться в профиль
+                </a>
+            </div>
+            
+            {% if market_cards %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                {% for card_data in market_cards %}
+                    {% set user_card = card_data.UserCard %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm market-card">
+                            <div class="position-absolute top-0 end-0 m-2">
+                                {% if user_card.user_id == current_user_id %}
+                                <span class="badge bg-warning">Ваша карта</span>
+                                {% else %}
+                                <span class="badge bg-danger">На продаже</span>
+                                {% endif %}
+                            </div>
+                            {% set default_img = url_for('static', filename='images/default_card.jpg') %}
+                            {% set img_src = url_for('static', filename=user_card.card.image) if user_card.card.image else default_img %}
+                            <img src="{{ img_src }}" 
+                                 class="card-img-top" 
+                                 alt="{{ user_card.card.name }}"
+                                 style="height: 200px; object-fit: cover;"
+                                 onerror="this.src='{{ default_img }}'"
+                                 data-default-src="{{ default_img }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ user_card.card.name }}</h5>
+                                <p class="card-text">{{ user_card.card.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="badge bg-primary">Очки: {{ user_card.card.base_points }}</span>
+                                    <span class="badge bg-success">Цена: {{ user_card.price }} <i class="fas fa-coins"></i></span>
+                                </div>
+                                <div class="seller-info mb-2">
+                                    <small class="text-muted">Продавец: {{ card_data.seller_username }}</small>
+                                    {% if user_card.user_id == current_user_id %}
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-warning w-100" onclick="removeFromMarket('{{ user_card.id }}')">
+                                            <i class="fas fa-times me-1"></i>Снять с продажи
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-top-0 pt-0">
+                                <button class="btn btn-primary w-100 buy-card-btn" 
+                                        data-card-id="{{ user_card.id }}"
+                                        data-price="{{ user_card.price }}">
+                                    <i class="fas fa-shopping-cart me-2"></i>Купить за {{ user_card.price }} монет
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="bi bi-shop" style="font-size: 3rem; opacity: 0.5;"></i>
+                </div>
+                <h5>На рынке пока нет карт</h5>
+                <p class="text-muted">Будьте первым, кто выставит карту на продажу!</p>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-3">
+                    <i class="fas fa-arrow-right me-1"></i> Перейти к своим картам
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+
+</div>
+
+<!-- Модальное окно подтверждения покупки -->
+<div class="modal fade" id="confirmPurchaseModal" tabindex="-1" aria-labelledby="confirmPurchaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmPurchaseModalLabel">Подтверждение покупки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите купить эту карту за <span id="purchasePrice">0</span> монет?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmPurchaseBtn">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно успешной покупки -->
+<div class="modal fade" id="purchaseSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Покупка успешна!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+                <h5 id="successMessage">Карта успешно куплена!</h5>
+                <p id="priceDeduction" class="mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success w-100" data-bs-dismiss="modal">Отлично</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to show toast notifications
+function showToast(message, type = 'success') {
+    const toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.style.position = 'fixed';
+    toastContainer.style.top = '20px';
+    toastContainer.style.right = '20px';
+    toastContainer.style.zIndex = '9999';
+    
+    if (!document.getElementById('toast-container')) {
+        document.body.appendChild(toastContainer);
+    } else {
+        toastContainer = document.getElementById('toast-container');
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { 
+        autohide: true, 
+        delay: 5000 // Show for 5 seconds instead of 3
+    });
+    bsToast.show();
+    
+    // Remove toast after it's hidden
+    toast.addEventListener('hidden.bs.toast', function() {
+        setTimeout(() => {
+            if (toast && toast.parentNode) {
+                toast.remove();
+            }
+        }, 1000);
+    });
+}
+
+// Function to handle buying a card
+function buyCard(button) {
+    const cardId = button.dataset.cardId;
+    const price = parseInt(button.dataset.price);
+    const cardName = button.closest('.card').querySelector('.card-title').textContent.trim();
+    
+    if (!confirm(`Вы уверены, что хотите купить карту "${cardName}" за ${price} монет?`)) {
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const originalText = button.innerHTML;
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Обработка...';
+    
+    fetch(`/api/cards/${cardId}/buy`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({
+            price: price
+        }),
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'Ошибка сервера');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Show success modal
+                const successModal = new bootstrap.Modal(document.getElementById('purchaseSuccessModal'));
+                
+                // Update success message with card name and price
+                document.getElementById('successMessage').textContent = `Вы купили карту "${cardName}"!`;
+                document.getElementById('priceDeduction').textContent = `Списано: ${price} монет`;
+                
+                // Show the success modal
+                successModal.show();
+                
+                // Update coins display if needed
+                if (data.new_balance !== undefined) {
+                    const coinsElements = document.querySelectorAll('.user-coins, #user-coins');
+                    coinsElements.forEach(el => {
+                        el.textContent = data.new_balance;
+                    });
+                }
+                
+                // Remove card from DOM with animation
+                const cardElement = button.closest('.col-md-4, .col');
+                if (cardElement) {
+                    cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
+                    cardElement.style.opacity = '0';
+                    cardElement.style.transform = 'scale(0.95)';
+                    
+                    setTimeout(() => {
+                        cardElement.remove();
+                        
+                        // Reload if no cards left
+                        if (document.querySelectorAll('.market-card').length === 0) {
+                            setTimeout(() => location.reload(), 500);
+                        }
+                    }, 300);
+                }
+            } else {
+                throw new Error(data.error || 'Произошла ошибка при покупке карты');
+            }
+        })
+        .catch(error => {
+            console.error('Error buying card:', error);
+            alert(error.message || 'Произошла ошибка при покупке карты');
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+}
+
+// Initialize event listeners when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle buy card button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('buy-card-btn') || e.target.closest('.buy-card-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const button = e.target.classList.contains('buy-card-btn') ? e.target : e.target.closest('.buy-card-btn');
+            buyCard(button);
+        }
+    });
+});
+</script>
+{% endblock %}

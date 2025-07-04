@@ -1,0 +1,208 @@
+/* Базовые стили для карт */
+.card-container {
+    width: 150px;
+    height: 220px;
+    margin: 0 auto 20px;
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.8s;
+}
+
+.card-inner.flipped {
+    transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.card-front {
+    transform: rotateY(180deg);
+}
+
+/* Стили для рубашки карты */
+.card-back {
+    background: linear-gradient(135deg, #2c3e50, #4a6572);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-back-logo {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.card-back-logo i {
+    font-size: 40px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.card-back-text {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+/* Стили для разных редкостей карт */
+.card-front[data-rarity="1"] {
+    background: linear-gradient(135deg, #4b6cb7, #182848);
+}
+
+.card-front[data-rarity="2"] {
+    background: linear-gradient(135deg, #134e5e, #71b280);
+}
+
+.card-front[data-rarity="3"] {
+    background: linear-gradient(135deg, #5f2c82, #49a09d);
+}
+
+.card-front[data-rarity="4"] {
+    background: linear-gradient(135deg, #b24592, #f15f79);
+}
+
+.card-front[data-rarity="5"] {
+    background: linear-gradient(135deg, #ff4e50, #f9d423);
+}
+
+/* Стили для содержимого карты */
+.player-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.player-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.default-player-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+}
+
+.player-initials {
+    font-size: 3rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    color: white;
+}
+
+.card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5) 50%, transparent);
+    padding: 20px 15px;
+    z-index: 2;
+}
+
+.player-name {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: white;
+}
+
+.card-rarity {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.stars {
+    color: #ffd700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 3px rgba(255, 215, 0, 0.7);
+}
+
+.prime-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #ff4e50, #f9d423);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transform: rotate(10deg);
+    z-index: 10;
+}
+
+/* Подсветка для прайм-карт */
+.is-prime .card-container:hover {
+    animation: prime-glow 1.5s infinite alternate;
+}
+
+@keyframes prime-glow {
+    0% {
+        box-shadow: 0 0 5px 2px rgba(255, 78, 80, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 20px 5px rgba(255, 78, 80, 0.8);
+    }
+}
+
+/* Красивый фон для страницы */
+body {
+    background: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+}
+
+.main-card {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: none !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    border-radius: 15px !important;
+    overflow: hidden;
+}
+
+.main-card-header {
+    border-bottom: none !important;
+}

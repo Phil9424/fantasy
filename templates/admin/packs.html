@@ -1,0 +1,492 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление паками{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Управление паками</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPackModal">
+            <i class="fas fa-plus fa-sm"></i> Добавить пак
+        </button>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Паки в магазине</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="packsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Изображение</th>
+                            <th>Название</th>
+                            <th>Цена</th>
+                            <th>Кол-во карт</th>
+                            <th>Мин. редкость</th>
+                            <th>Макс. редкость</th>
+                            <th>Шанс прайм</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pack in packs %}
+                            <tr data-pack-id="{{ pack.id }}">
+                                <td>{{ pack.id }}</td>
+                                <td>
+                                    {% if pack.image %}
+                                        <img src="{{ url_for('static', filename='uploads/' + pack.image) }}" alt="{{ pack.name }}" class="img-thumbnail" style="max-width: 50px;">
+                                    {% else %}
+                                        <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <i class="fas fa-box"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="pack-name">{{ pack.name }}</td>
+                                <td class="pack-price">{{ pack.price }}</td>
+                                <td class="pack-cards-count">{{ pack.cards_count }}</td>
+                                <td class="pack-min-rarity">{{ pack.min_rarity }}</td>
+                                <td class="pack-max-rarity">{{ pack.max_rarity }}</td>
+                                <td class="pack-prime-chance">{{ pack.prime_chance }}</td>
+                                <td class="pack-status">
+                                    {% if pack.is_active %}
+                                        <span class="badge bg-success">Активен</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Неактивен</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editPackModal{{ pack.id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePackModal{{ pack.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Модальное окно для редактирования пака -->
+                            <div class="modal fade" id="editPackModal{{ pack.id }}" tabindex="-1" aria-labelledby="editPackModalLabel{{ pack.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="editPackModalLabel{{ pack.id }}">Редактировать пак: {{ pack.name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form id="editPackForm{{ pack.id }}" action="{{ url_for('admin_update_pack', pack_id=pack.id) }}" method="post" enctype="multipart/form-data">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="name{{ pack.id }}" class="form-label">Название пака</label>
+                                                    <input type="text" class="form-control" id="name{{ pack.id }}" name="name" value="{{ pack.name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="description{{ pack.id }}" class="form-label">Описание</label>
+                                                    <textarea class="form-control" id="description{{ pack.id }}" name="description" rows="3">{{ pack.description }}</textarea>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="price{{ pack.id }}" class="form-label">Цена (монеты)</label>
+                                                    <input type="number" class="form-control" id="price{{ pack.id }}" name="price" value="{{ pack.price }}" min="1" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="cards_count{{ pack.id }}" class="form-label">Количество карт в паке</label>
+                                                    <input type="number" class="form-control" id="cards_count{{ pack.id }}" name="cards_count" value="{{ pack.cards_count }}" min="1" required>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col">
+                                                        <label for="min_rarity{{ pack.id }}" class="form-label">Мин. редкость</label>
+                                                        <select class="form-select" id="min_rarity{{ pack.id }}" name="min_rarity" required>
+                                                            <option value="1" {% if pack.min_rarity == 1 %}selected{% endif %}>1 ★</option>
+                                                            <option value="2" {% if pack.min_rarity == 2 %}selected{% endif %}>2 ★★</option>
+                                                            <option value="3" {% if pack.min_rarity == 3 %}selected{% endif %}>3 ★★★</option>
+                                                            <option value="4" {% if pack.min_rarity == 4 %}selected{% endif %}>4 ★★★★</option>
+                                                            <option value="5" {% if pack.min_rarity == 5 %}selected{% endif %}>5 ★★★★★</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col">
+                                                        <label for="max_rarity{{ pack.id }}" class="form-label">Макс. редкость</label>
+                                                        <select class="form-select" id="max_rarity{{ pack.id }}" name="max_rarity" required>
+                                                            <option value="1" {% if pack.max_rarity == 1 %}selected{% endif %}>1 ★</option>
+                                                            <option value="2" {% if pack.max_rarity == 2 %}selected{% endif %}>2 ★★</option>
+                                                            <option value="3" {% if pack.max_rarity == 3 %}selected{% endif %}>3 ★★★</option>
+                                                            <option value="4" {% if pack.max_rarity == 4 %}selected{% endif %}>4 ★★★★</option>
+                                                            <option value="5" {% if pack.max_rarity == 5 %}selected{% endif %}>5 ★★★★★</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="prime_chance{{ pack.id }}" class="form-label">Шанс выпадения прайм-карты (0-1)</label>
+                                                    <input type="number" class="form-control" id="prime_chance{{ pack.id }}" name="prime_chance" value="{{ pack.prime_chance }}" min="0" max="1" step="0.01" required>
+                                                </div>
+                                                <div class="mb-3 form-check">
+                                                    <input type="checkbox" class="form-check-input" id="is_active{{ pack.id }}" name="is_active" {% if pack.is_active %}checked{% endif %}>
+                                                    <label class="form-check-label" for="is_active{{ pack.id }}">Активен в магазине</label>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="image{{ pack.id }}" class="form-label">Изображение пака</label>
+                                                    <input class="form-control" type="file" id="image{{ pack.id }}" name="image" accept="image/*">
+                                                    <div class="form-text">Оставьте пустым, чтобы сохранить текущее изображение</div>
+                                                    {% if pack.image %}
+                                                        <div class="mt-2">
+                                                            <img src="{{ url_for('static', filename='uploads/' + pack.image) }}" alt="{{ pack.name }}" class="img-thumbnail" style="max-width: 100px;">
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Модальное окно для удаления пака -->
+                            <div class="modal fade" id="deletePackModal{{ pack.id }}" tabindex="-1" aria-labelledby="deletePackModalLabel{{ pack.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deletePackModalLabel{{ pack.id }}">Удалить пак</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form id="deletePackForm{{ pack.id }}" action="{{ url_for('admin_delete_pack', pack_id=pack.id) }}" method="post">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-body">
+                                                <p>Вы уверены, что хотите удалить пак "{{ pack.name }}"?</p>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="confirmDelete{{ pack.id }}" required>
+                                                    <label class="form-check-label" for="confirmDelete{{ pack.id }}">
+                                                        Я подтверждаю удаление
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                <button type="submit" class="btn btn-danger" id="deleteButton{{ pack.id }}" disabled>Удалить</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <script>
+                                // Активация кнопки удаления при подтверждении
+                                document.getElementById('confirmDelete{{ pack.id }}').addEventListener('change', function() {
+                                    document.getElementById('deleteButton{{ pack.id }}').disabled = !this.checked;
+                                });
+                                
+                                // Обработка формы редактирования пака через AJAX
+                                document.getElementById('editPackForm{{ pack.id }}').addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    
+                                    const formData = new FormData(this);
+                                    
+                                    fetch(this.action, {
+                                        method: 'POST',
+                                        body: formData
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            // Обновляем данные в таблице
+                                            const row = document.querySelector('tr[data-pack-id="{{ pack.id }}"]');
+                                            if (row) {
+                                                row.querySelector('.pack-name').textContent = data.pack.name;
+                                                row.querySelector('.pack-price').textContent = data.pack.price;
+                                                row.querySelector('.pack-cards-count').textContent = data.pack.cards_count;
+                                                row.querySelector('.pack-min-rarity').textContent = data.pack.min_rarity;
+                                                row.querySelector('.pack-max-rarity').textContent = data.pack.max_rarity;
+                                                row.querySelector('.pack-prime-chance').textContent = data.pack.prime_chance;
+                                                
+                                                // Обновляем статус пака
+                                                const statusCell = row.querySelector('.pack-status');
+                                                if (data.pack.is_active) {
+                                                    statusCell.innerHTML = '<span class="badge bg-success">Активен</span>';
+                                                } else {
+                                                    statusCell.innerHTML = '<span class="badge bg-secondary">Неактивен</span>';
+                                                }
+                                            }
+                                            
+                                            // Закрываем модальное окно
+                                            const modal = bootstrap.Modal.getInstance(document.getElementById('editPackModal{{ pack.id }}'));
+                                            modal.hide();
+                                            
+                                            // Показываем уведомление
+                                            alert('Пак успешно обновлен');
+                                        } else {
+                                            alert('Ошибка: ' + data.message);
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Произошла ошибка при обновлении пака');
+                                    });
+                                });
+                                
+                                // Обработка формы удаления пака через AJAX
+                                document.getElementById('deletePackForm{{ pack.id }}').addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    
+                                    const formData = new FormData(this);
+                                    
+                                    fetch(this.action, {
+                                        method: 'POST',
+                                        body: formData
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            // Удаляем строку из таблицы
+                                            const row = document.querySelector('tr[data-pack-id="{{ pack.id }}"]');
+                                            if (row) {
+                                                row.remove();
+                                            }
+                                            
+                                            // Закрываем модальное окно
+                                            const modal = bootstrap.Modal.getInstance(document.getElementById('deletePackModal{{ pack.id }}'));
+                                            modal.hide();
+                                            
+                                            // Показываем уведомление
+                                            alert('Пак успешно удален');
+                                        } else {
+                                            alert('Ошибка: ' + data.message);
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Произошла ошибка при удалении пака');
+                                    });
+                                });
+                                
+                                // Валидация редкости карт
+                                (function() {
+                                    var minRarityId = 'min_rarity{{ pack.id }}';
+                                    var maxRarityId = 'max_rarity{{ pack.id }}';
+                                    var minRarityEl = document.getElementById(minRarityId);
+                                    var maxRarityEl = document.getElementById(maxRarityId);
+                                    
+                                    if (minRarityEl && maxRarityEl) {
+                                        minRarityEl.addEventListener('change', function() {
+                                            if (parseInt(this.value) > parseInt(maxRarityEl.value)) {
+                                                maxRarityEl.value = this.value;
+                                            }
+                                        });
+                                        
+                                        maxRarityEl.addEventListener('change', function() {
+                                            if (parseInt(this.value) < parseInt(minRarityEl.value)) {
+                                                minRarityEl.value = this.value;
+                                            }
+                                        });
+                                    }
+                                })();
+                            </script>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления пака -->
+<div class="modal fade" id="addPackModal" tabindex="-1" aria-labelledby="addPackModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPackModalLabel">Добавить новый пак</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addPackForm" action="{{ url_for('admin_add_pack') }}" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Название пака</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Цена (монеты)</label>
+                        <input type="number" class="form-control" id="price" name="price" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cards_count" class="form-label">Количество карт в паке</label>
+                        <input type="number" class="form-control" id="cards_count" name="cards_count" min="1" value="1" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="min_rarity" class="form-label">Мин. редкость</label>
+                            <select class="form-select" id="min_rarity" name="min_rarity" required>
+                                <option value="1" selected>1 ★</option>
+                                <option value="2">2 ★★</option>
+                                <option value="3">3 ★★★</option>
+                                <option value="4">4 ★★★★</option>
+                                <option value="5">5 ★★★★★</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="max_rarity" class="form-label">Макс. редкость</label>
+                            <select class="form-select" id="max_rarity" name="max_rarity" required>
+                                <option value="1">1 ★</option>
+                                <option value="2">2 ★★</option>
+                                <option value="3">3 ★★★</option>
+                                <option value="4">4 ★★★★</option>
+                                <option value="5" selected>5 ★★★★★</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="prime_chance" class="form-label">Шанс выпадения прайм-карты (0-1)</label>
+                        <input type="number" class="form-control" id="prime_chance" name="prime_chance" min="0" max="1" step="0.01" value="0.1" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                        <label class="form-check-label" for="is_active">Активен в магазине</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Изображение пака</label>
+                        <input class="form-control" type="file" id="image" name="image" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить пак</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Обработка формы добавления пака через AJAX
+    document.getElementById('addPackForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Добавляем новую строку в таблицу
+                const table = document.getElementById('packsTable').getElementsByTagName('tbody')[0];
+                const newRow = table.insertRow();
+                newRow.setAttribute('data-pack-id', data.pack.id);
+                
+                // Создаем ячейки для новой строки
+                const idCell = newRow.insertCell(0);
+                const imageCell = newRow.insertCell(1);
+                const nameCell = newRow.insertCell(2);
+                const priceCell = newRow.insertCell(3);
+                const cardsCountCell = newRow.insertCell(4);
+                const minRarityCell = newRow.insertCell(5);
+                const maxRarityCell = newRow.insertCell(6);
+                const primeChanceCell = newRow.insertCell(7);
+                const statusCell = newRow.insertCell(8);
+                const actionsCell = newRow.insertCell(9);
+                
+                // Заполняем ячейки данными
+                idCell.textContent = data.pack.id;
+                
+                if (data.pack.image) {
+                    imageCell.innerHTML = `<img src="${window.location.origin}/static/uploads/${data.pack.image}" alt="${data.pack.name}" class="img-thumbnail" style="max-width: 50px;">`;
+                } else {
+                    imageCell.innerHTML = `<div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;"><i class="fas fa-box"></i></div>`;
+                }
+                
+                nameCell.textContent = data.pack.name;
+                nameCell.className = 'pack-name';
+                
+                priceCell.textContent = data.pack.price;
+                priceCell.className = 'pack-price';
+                
+                cardsCountCell.textContent = data.pack.cards_count;
+                cardsCountCell.className = 'pack-cards-count';
+                
+                minRarityCell.textContent = data.pack.min_rarity;
+                minRarityCell.className = 'pack-min-rarity';
+                
+                maxRarityCell.textContent = data.pack.max_rarity;
+                maxRarityCell.className = 'pack-max-rarity';
+                
+                primeChanceCell.textContent = data.pack.prime_chance;
+                primeChanceCell.className = 'pack-prime-chance';
+                
+                if (data.pack.is_active) {
+                    statusCell.innerHTML = '<span class="badge bg-success">Активен</span>';
+                } else {
+                    statusCell.innerHTML = '<span class="badge bg-secondary">Неактивен</span>';
+                }
+                statusCell.className = 'pack-status';
+                
+                // Для кнопок действий нужно перезагрузить страницу, так как они требуют сложной структуры модальных окон
+                actionsCell.innerHTML = `<div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="location.reload()">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="location.reload()">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>`;
+                
+                // Сбрасываем форму
+                this.reset();
+                
+                // Закрываем модальное окно
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addPackModal'));
+                modal.hide();
+                
+                // Показываем уведомление
+                alert('Пак успешно добавлен');
+            } else {
+                alert('Ошибка: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при добавлении пака');
+        });
+    });
+    
+    // Валидация редкости карт
+    document.getElementById('min_rarity').addEventListener('change', function() {
+        const maxRarity = document.getElementById('max_rarity');
+        if (parseInt(this.value) > parseInt(maxRarity.value)) {
+            maxRarity.value = this.value;
+        }
+    });
+    
+    document.getElementById('max_rarity').addEventListener('change', function() {
+        const minRarity = document.getElementById('min_rarity');
+        if (parseInt(this.value) < parseInt(minRarity.value)) {
+            minRarity.value = this.value;
+        }
+    });
+    
+    // Валидация для формы добавления пака
+    document.getElementById('min_rarity').addEventListener('change', function() {
+        const maxRarity = document.getElementById('max_rarity');
+        if (parseInt(this.value) > parseInt(maxRarity.value)) {
+            maxRarity.value = this.value;
+        }
+    });
+    
+    document.getElementById('max_rarity').addEventListener('change', function() {
+        const minRarity = document.getElementById('min_rarity');
+        if (parseInt(this.value) < parseInt(minRarity.value)) {
+            minRarity.value = this.value;
+        }
+    });
+</script>
+{% endblock %}

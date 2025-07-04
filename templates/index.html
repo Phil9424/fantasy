@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Фэнтези Лига Мафии{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero-section {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("{{ url_for('static', filename='images/mafia-bg.jpg') }}") no-repeat center center;
+    background-size: cover;
+    border-radius: 10px;
+    padding: 100px 0;
+    margin-bottom: 50px;
+}
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Герой раздел -->
+<section class="hero-section text-center text-white py-5">
+    <div class="container py-5">
+        <h1 class="display-4 fw-bold mb-4 animate__animated animate__fadeInDown">Фэнтези Лига Мафии</h1>
+        <p class="lead mb-4 animate__animated animate__fadeInUp animate__delay-1s">Собери команду лучших игроков в мафию и стань чемпионом!</p>
+        {% if not current_user.is_authenticated %}
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center animate__animated animate__fadeInUp animate__delay-2s">
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-4 me-sm-3">Начать игру</a>
+            <a href="{{ url_for('rules') }}" class="btn btn-outline-light btn-lg px-4">Узнать правила</a>
+        </div>
+        {% else %}
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center animate__animated animate__fadeInUp animate__delay-2s">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4 me-sm-3">Моя команда</a>
+            <a href="{{ url_for('shop') }}" class="btn btn-outline-light btn-lg px-4">Магазин карт</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- О игре -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Как это работает?</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                            <i class="bi bi-collection-play fs-1"></i>
+                        </div>
+                        <h4 class="card-title">1. Собери команду</h4>
+                        <p class="card-text">Получай карты игроков, открывая пакеты или покупая их в магазине. Собери команду из 4-х сильнейших игроков.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                            <i class="bi bi-trophy fs-1"></i>
+                        </div>
+                        <h4 class="card-title">2. Участвуй в турнирах</h4>
+                        <p class="card-text">Выставляй свою команду на турниры и зарабатывай очки в зависимости от результатов игроков.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                            <i class="bi bi-award fs-1"></i>
+                        </div>
+                        <h4 class="card-title">3. Стань чемпионом</h4>
+                        <p class="card-text">Зарабатывай как можно больше очков, чтобы подняться в рейтинге и стать чемпионом Фэнтези Лиги Мафии!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Преимущества -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Почему стоит играть?</h2>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="d-flex">
+                    <div class="me-3 text-primary">
+                        <i class="bi bi-stars fs-1"></i>
+                    </div>
+                    <div>
+                        <h4>Уникальные карты</h4>
+                        <p class="mb-0">Коллекционируй редкие и легендарные карты с разными характеристиками.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="d-flex">
+                    <div class="me-3 text-success">
+                        <i class="bi bi-people fs-1"></i>
+                    </div>
+                    <div>
+                        <h4>Соревнуйся</h4>
+                        <p class="mb-0">Сравнивай свои результаты с друзьями и другими игроками.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="d-flex">
+                    <div class="me-3 text-warning">
+                        <i class="bi bi-gift fs-1"></i>
+                    </div>
+                    <div>
+                        <h4>Бонусы</h4>
+                        <p class="mb-0">Получай ежедневные награды и участвуй в специальных событиях.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="d-flex">
+                    <div class="me-3 text-danger">
+                        <i class="bi bi-joystick fs-1"></i>
+                    </div>
+                    <div>
+                        <h4>Увлекательно</h4>
+                        <p class="mb-0">Почувствуй себя тренером и стратегом в мире мафии.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Призыв к действию -->
+<section class="py-5 text-center">
+    <div class="container">
+        <h2 class="mb-4">Готов начать?</h2>
+        <p class="lead mb-4">Присоединяйся к тысячам игроков и начни свой путь к чемпионству!</p>
+        {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-5">Зарегистрироваться</a>
+        {% else %}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-5">В личный кабинет</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

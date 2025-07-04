@@ -1,0 +1,201 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Управление картами{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fifa-cards.css') }}?v=1.0.0">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<style>
+    .view-toggle-btn.active {
+        background-color: #4e73df;
+        color: white;
+    }
+    .view-toggle-btn:not(.active) {
+        background-color: #f8f9fc;
+        color: #4e73df;
+    }
+    /* Force refresh of the view */
+    #cardView {
+        display: none !important;
+    }
+    #cardView.show {
+        display: block !important;
+    }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Управление картами</h1>
+        <div class="d-flex">
+            <div class="btn-group me-3" role="group" aria-label="Переключение вида">
+                <button type="button" class="btn view-toggle-btn active" id="tableViewBtn">
+                    <i class="bi bi-table"></i> Таблица
+                </button>
+                <button type="button" class="btn view-toggle-btn" id="cardViewBtn">
+                    <i class="bi bi-grid-3x3"></i> Карточки
+                </button>
+            </div>
+            <a href="{{ url_for('add_card') }}" class="btn btn-primary">Добавить карту</a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Все карты</h6>
+        </div>
+        <div class="card-body">
+            <!-- Табличное представление -->
+            <div class="table-responsive" id="tableView">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Изображение</th>
+                            <th>Имя</th>
+                            <th>Редкость</th>
+                            <th>Стоимость</th>
+                            <th>Prime</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for card in cards %}
+                        <tr>
+                            <td>{{ card.id }}</td>
+                            <td>
+                                {% if card.image %}
+                                <img src="{{ url_for('static', filename=card.image) }}" 
+                                     alt="{{ card.name }}" 
+                                     class="img-thumbnail" 
+                                     style="max-width: 50px; max-height: 50px; object-fit: cover;">
+
+                                {% else %}
+                                <span class="text-muted">Нет изображения</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ card.name }}</td>
+                            <td>
+                                {% if card.rarity == 1 %}
+                                Обычная
+                                {% elif card.rarity == 2 %}
+                                Необычная
+                                {% elif card.rarity == 3 %}
+                                Редкая
+                                {% elif card.rarity == 4 %}
+                                Эпическая
+                                {% elif card.rarity == 5 %}
+                                Легендарная
+                                {% else %}
+                                Неизвестно
+                                {% endif %}
+                                ({{ card.rarity }}⭐)
+                            </td>
+                            <td>{{ card.base_points }}</td>
+                            <td>{% if card.is_prime %}<i class="bi bi-check-lg text-success"></i>{% else %}<i class="bi bi-dash text-muted"></i>{% endif %}</td>
+                            <td>
+                                <a href="{{ url_for('add_card', card_id=card.id) }}" class="btn btn-sm btn-primary mb-1">
+                                    <i class="bi bi-pencil"></i> Редактировать
+                                </a>
+                                <a href="{{ url_for('direct_delete_card', card_id=card.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту карту? Это действие нельзя отменить!')">
+                                    <i class="bi bi-trash"></i> Удалить
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Card View -->
+            <div id="cardView" style="display: none;">
+                <div class="fifa-cards-grid">
+                    {% for card in cards %}
+                    <div class="fifa-card-wrapper">
+                        <div class="fifa-card" data-rarity="{{ card.rarity }}">
+                            <div class="player-image-container">
+                                {% if card.image %}
+                                <img src="{{ url_for('static', filename=card.image) }}" class="player-image" alt="{{ card.name }}">
+                                {% else %}
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-overlay">
+                                <h3 class="player-name">{{ card.name }}</h3>
+                                <div class="card-rarity">
+                                    <div class="stars">
+                                        {% for i in range(card.rarity) %}
+                                        ★
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="card-price">
+                                    <div class="price-value">{{ card.base_points }}</div>
+                                    <div class="price-label">Очки</div>
+                                </div>
+                                <div class="d-flex gap-2 mt-2">
+                                    <a href="{{ url_for('add_card', card_id=card.id) }}" 
+                                       class="btn btn-sm btn-outline-light w-100">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{{ url_for('direct_delete_card', card_id=card.id) }}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Удалить карту?')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% if card.is_prime %}
+                            <div class="prime-badge" style="display: block;">П</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableViewBtn = document.getElementById('tableViewBtn');
+        const cardViewBtn = document.getElementById('cardViewBtn');
+        const tableView = document.getElementById('tableView');
+        const cardView = document.getElementById('cardView');
+        
+        // Переключение на табличный вид
+        tableViewBtn.addEventListener('click', function() {
+            tableView.style.display = 'block';
+            cardView.style.display = 'none';
+            tableViewBtn.classList.add('active');
+            cardViewBtn.classList.remove('active');
+            // Сохраняем выбор пользователя в localStorage
+            localStorage.setItem('adminCardsViewPreference', 'table');
+        });
+        
+        // Переключение на карточный вид
+        cardViewBtn.addEventListener('click', function() {
+            tableView.style.display = 'none';
+            cardView.style.display = 'block';
+            cardView.classList.add('show');
+            cardViewBtn.classList.add('active');
+            tableViewBtn.classList.remove('active');
+            // Сохраняем выбор пользователя в localStorage
+            localStorage.setItem('adminCardsViewPreference', 'card');
+        });
+        
+        // Восстанавливаем предпочтение пользователя при загрузке страницы
+        const viewPreference = localStorage.getItem('adminCardsViewPreference');
+        if (viewPreference === 'card') {
+            cardView.style.display = 'block';
+            cardView.classList.add('show');
+            cardViewBtn.click();
+        }
+    });
+</script>
+
+{% endblock %}

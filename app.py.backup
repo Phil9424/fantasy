@@ -1,0 +1,737 @@
+import os
+from flask import Flask, render_template, redirect, url_for, flash, request, send_from_directory, jsonify
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from datetime import datetime
+from forms import LoginForm, RegistrationForm, ForgotPasswordForm
+from werkzeug.utils import secure_filename
+from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
+import uuid
+from models import db, User, Card, UserCard, Team, Tournament
+
+# Инициализация расширений
+csrf = CSRFProtect()
+login_manager = LoginManager()
+login_manager.login_view = 'login'
+
+def create_app():
+    # Инициализация приложения
+    app = Flask(__name__)
+    
+    # Конфигурация
+    app.config['SECRET_KEY'] = 'your-secret-key-here'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mafia_fantasy.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['UPLOAD_FOLDER'] = 'static/uploads'
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
+    app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+    
+    # Инициализация расширений
+    csrf.init_app(app)
+    db.init_app(app)
+    migrate = Migrate(app, db)  # Initialize migrate here
+    login_manager.init_app(app)
+    
+    # Создаем папку для загрузок, если её нет
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    
+    # Регистрация blueprints (если будут)
+    # from views import main_bp
+    # app.register_blueprint(main_bp)
+    
+    return app
+
+# Создаем экземпляр приложения
+app = create_app()
+
+# Загрузчик пользователя для Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Фильтры для шаблонов
+@app.template_filter('rarity_name')
+def rarity_name_filter(rarity):
+    rarities = {
+        1: 'Обычная',
+        2: 'Необычная',
+        3: 'Редкая',
+        4: 'Эпическая',
+        5: 'Легендарная'
+    }
+    return rarities.get(rarity, 'Неизвестная')
+
+@app.template_filter('rarity_color')
+def rarity_color_filter(rarity):
+    colors = {
+        1: 'secondary',
+        2: 'info',
+        3: 'primary',
+        4: 'warning',
+        5: 'danger'
+    }
+    return colors.get(rarity, 'secondary')
+
+# Роуты
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/rules')
+def rules():
+    return render_template('rules.html')
+
+@app.route('/leaderboard')
+def leaderboard():
+    top_players = User.query.order_by(User.points.desc()).limit(10).all()
+    return render_template('leaderboard.html', players=top_players)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    form = RegistrationForm()
+    
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Создаем команду для пользователя
+        team = Team(user_id=user.id)
+        db.session.add(team)
+        
+        # Выдаем начальные карты
+        starter_cards = Card.query.filter(Card.rarity.in_([1, 2])).order_by(db.func.random()).limit(5).all()
+        for card in starter_cards:
+            user_card = UserCard(user_id=user.id, card_id=card.id)
+            db.session.add(user_card)
+        
+        db.session.commit()
+        
+        flash('Регистрация прошла успешно! Вам выданы стартовые карты.', 'success')
+        return redirect(url_for('login'))
+        
+    return render_template('auth/register.html', form=form)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    form = LoginForm()
+        
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        
+        if not user or not user.check_password(form.password.data):
+            flash('Неверное имя пользователя или пароль', 'danger')
+            return redirect(url_for('login'))
+            
+        login_user(user, remember=form.remember.data)
+        return redirect(url_for('dashboard'))
+        
+    return render_template('auth/login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Вы успешно вышли из системы', 'success')
+    return redirect(url_for('index'))
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            # Здесь будет логика отправки email с инструкциями по восстановлению пароля
+            # В данной версии просто показываем сообщение об успехе
+            flash('Инструкции по восстановлению пароля отправлены на ваш email', 'success')
+        else:
+            # Для безопасности не сообщаем, что email не найден
+            flash('Инструкции по восстановлению пароля отправлены на ваш email', 'success')
+        return redirect(url_for('login'))
+    return render_template('auth/forgot_password.html', form=form)
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # Получаем актуальные данные пользователя из базы данных
+    user = User.query.get(current_user.id)
+    
+    # Получаем все карты пользователя
+    user_cards = UserCard.query.filter_by(user_id=user.id).all()
+    
+    # Получаем карты в команде
+    team_cards = []
+    if user.team:
+        team_cards = [
+            UserCard.query.get(card_id) for card_id in [
+                user.team.card1_id,
+                user.team.card2_id,
+                user.team.card3_id,
+                user.team.card4_id
+            ] if card_id
+        ]
+    
+    # Передаем данные в шаблон
+    return render_template('dashboard.html', 
+                         user=user, 
+                         user_cards=user_cards,
+                         team_cards=team_cards,
+                         active_tournaments=[])  # Пока пустой список турниров
+
+@app.route('/open_pack/<pack_id>')
+@login_required
+def open_pack(pack_id):
+    # Определяем стоимость пака по его ID
+    pack_costs = {
+        'basic': 100,
+        'gold': 250,
+        'legendary': 500
+    }  # Стоимость паков по ID
+    cost = pack_costs.get(pack_id)
+    
+    if not cost:
+        flash('Неверный тип пака', 'danger')
+        return redirect(url_for('shop'))
+    
+    try:
+        # Получаем актуальные данные пользователя из базы данных
+        user = User.query.get(current_user.id)
+        
+        # Строгая проверка баланса
+        if user.coins < cost:
+            flash('Недостаточно монет', 'danger')
+            return redirect(url_for('shop'))
+        
+        # Вычитаем стоимость пака
+        user.coins -= cost
+        
+        # Определяем редкость карт в пачке
+        import random
+        
+        if pack_id == 'basic':  # Базовый пак
+            # В базовом паке есть шанс получить редкую карту (10%)
+            rarities = []
+            for _ in range(5):
+                if random.random() < 0.1:  # 10% шанс на редкую карту
+                    rarities.append(2)  # Редкая
+                elif random.random() < 0.01:  # 1% шанс на эпическую карту
+                    rarities.append(3)  # Эпическая
+                else:
+                    rarities.append(1)  # Обычная
+                    
+        elif pack_id == 'gold':  # Золотой пак
+            # В золотом паке есть шанс получить редкую (30%), эпическую (5%) или легендарную (1%) карту
+            rarities = []
+            for _ in range(5):
+                chance = random.random()
+                if chance < 0.01:  # 1% шанс на легендарную карту
+                    rarities.append(4)  # Легендарная
+                elif chance < 0.05:  # 5% шанс на эпическую карту
+                    rarities.append(3)  # Эпическая
+                elif chance < 0.30:  # 30% шанс на редкую карту
+                    rarities.append(2)  # Редкая
+                else:
+                    rarities.append(1)  # Обычная
+                    
+        else:  # Легендарный пак
+            # В легендарном паке есть шанс получить редкую (50%), эпическую (20%) или легендарную (5%) карту
+            # Гарантированная прайм-карта
+            rarities = []
+            for i in range(5):
+                chance = random.random()
+                if i == 0:  # Первая карта всегда прайм
+                    if chance < 0.05:  # 5% шанс на легендарную прайм-карту
+                        rarities.append(4)  # Легендарная
+                    elif chance < 0.25:  # 20% шанс на эпическую прайм-карту
+                        rarities.append(3)  # Эпическая
+                    else:
+                        rarities.append(2)  # Редкая
+                else:
+                    if chance < 0.05:  # 5% шанс на легендарную карту
+                        rarities.append(4)  # Легендарная
+                    elif chance < 0.20:  # 20% шанс на эпическую карту
+                        rarities.append(3)  # Эпическая
+                    elif chance < 0.50:  # 50% шанс на редкую карту
+                        rarities.append(2)  # Редкая
+                    else:
+                        rarities.append(1)  # Обычная
+        
+        # Выбираем случайные карты соответствующих редкостей
+        new_cards = []
+        for i, rarity in enumerate(rarities):
+            # Проверяем, есть ли карты данной редкости
+            # Для легендарного пака первая карта всегда прайм
+            if pack_id == 'legendary' and i == 0:
+                # Ищем прайм-карты данной редкости
+                cards_of_rarity = Card.query.filter_by(rarity=rarity, is_prime=True).all()
+                if not cards_of_rarity:  # Если нет прайм-карт данной редкости, берем обычные
+                    cards_of_rarity = Card.query.filter_by(rarity=rarity).all()
+            else:
+                cards_of_rarity = Card.query.filter_by(rarity=rarity).all()
+                
+            if cards_of_rarity:
+                # Выбираем случайную карту
+                import random
+                card = random.choice(cards_of_rarity)
+                
+                # Создаем запись о карте пользователя
+                user_card = UserCard(user_id=user.id, card_id=card.id)
+                db.session.add(user_card)
+                new_cards.append(card)
+        
+        # Сохраняем изменения в базе данных
+        db.session.commit()
+        
+        # Обновляем сессию пользователя
+        from flask_login import login_user
+        login_user(user)
+        
+        # Показываем сообщение об успехе
+        flash(f'Вы открыли пак и получили {len(new_cards)} карточек игроков!', 'success')
+        
+        # Отображаем страницу с анимацией открытия карточек
+        return render_template('pack_animation.html', cards=new_cards)
+    
+    except Exception as e:
+        # В случае ошибки отменяем транзакцию и показываем сообщение об ошибке
+        db.session.rollback()
+        error_message = str(e)
+        flash(f'Произошла ошибка при покупке пака: {error_message}', 'danger')
+        print(f'Ошибка при покупке пака: {error_message}')
+        
+        # Проверяем, есть ли карты в базе данных
+        card_count = Card.query.count()
+        print(f'Количество карт в базе данных: {card_count}')
+        
+        # Проверяем количество карт по редкости
+        for rarity in range(1, 6):
+            count = Card.query.filter_by(rarity=rarity).count()
+            print(f'Карт редкости {rarity}: {count}')
+        
+        return redirect(url_for('shop'))
+
+@app.route('/shop')
+@login_required
+def shop():
+    return render_template('shop.html')
+
+@app.route('/update_team', methods=['GET', 'POST'])
+@login_required
+def update_team():
+    # Получаем актуальные данные пользователя
+    user = User.query.get(current_user.id)
+    
+    # Создаем команду, если её нет
+    if not user.team:
+        team = Team(user_id=user.id)
+        db.session.add(team)
+        db.session.commit()
+        user = User.query.get(user.id)  # Обновляем пользователя с новой командой
+    
+    # Получаем все карты пользователя
+    user_cards = UserCard.query.filter_by(user_id=user.id).all()
+    
+    # Получаем карты в команде
+    team_cards = []
+    if user.team:
+        team_cards = [
+            UserCard.query.get(card_id) for card_id in [
+                user.team.card1_id,
+                user.team.card2_id,
+                user.team.card3_id,
+                user.team.card4_id
+            ] if card_id
+        ]
+    
+    # Если это POST-запрос, обрабатываем форму
+    if request.method == 'POST':
+        action = request.form.get('action')
+        card_id = request.form.get('card_id')
+        
+        if action == 'add' and card_id:
+            # Проверяем, что карта принадлежит пользователю
+            user_card = UserCard.query.filter_by(id=card_id, user_id=user.id).first()
+            if user_card:
+                # Находим первый свободный слот в команде
+                if user.team.card1_id is None:
+                    user.team.card1_id = user_card.id
+                elif user.team.card2_id is None:
+                    user.team.card2_id = user_card.id
+                elif user.team.card3_id is None:
+                    user.team.card3_id = user_card.id
+                elif user.team.card4_id is None:
+                    user.team.card4_id = user_card.id
+                else:
+                    # Если все слоты заняты, заменяем первый
+                    user.team.card1_id = user_card.id
+                
+                # Отмечаем карту как находящуюся в команде
+                user_card.in_team = True
+                db.session.add(user_card)
+                flash('Карта добавлена в команду!', 'success')
+        
+        elif action == 'remove' and card_id:
+            # Проверяем, что карта принадлежит пользователю
+            user_card = UserCard.query.filter_by(id=card_id, user_id=user.id).first()
+            if user_card:
+                # Удаляем карту из команды
+                if user.team.card1_id == user_card.id:
+                    user.team.card1_id = None
+                elif user.team.card2_id == user_card.id:
+                    user.team.card2_id = None
+                elif user.team.card3_id == user_card.id:
+                    user.team.card3_id = None
+                elif user.team.card4_id == user_card.id:
+                    user.team.card4_id = None
+                
+                # Снимаем отметку о нахождении в команде
+                user_card.in_team = False
+                db.session.add(user_card)
+                flash('Карта удалена из команды!', 'success')
+        
+        db.session.commit()
+        return redirect(url_for('dashboard'))
+    
+    # Если это GET-запрос, отображаем страницу управления командой
+    return render_template('update_team.html', user=user, user_cards=user_cards, team_cards=team_cards)
+
+@app.route('/update_avatar', methods=['POST'])
+@login_required
+def update_avatar():
+    return update_user_avatar(current_user.id)
+
+@app.route('/admin')
+@login_required
+def admin():
+    # Проверяем, что пользователь администратор
+    if not current_user.is_admin:
+        flash('Доступ запрещен', 'danger')
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/users')
+@login_required
+def admin_users():
+    # Проверяем, что пользователь администратор
+    if not current_user.is_admin:
+        flash('Доступ запрещен', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Получаем всех пользователей
+    users = User.query.order_by(User.username).all()
+    return render_template('admin/users.html', users=users)
+
+@app.route('/admin/users/create', methods=['POST'])
+@login_required
+def admin_create_user():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+    
+    try:
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        is_admin = 'is_admin' in request.form
+        
+        # Валидация
+        if not all([username, email, password]):
+            return jsonify({'success': False, 'message': 'Все поля обязательны для заполнения'}), 400
+            
+        # Проверяем, существует ли пользователь с таким именем или email
+        if User.query.filter((User.username == username) | (User.email == email)).first():
+            return jsonify({'success': False, 'message': 'Пользователь с таким именем или email уже существует'}), 400
+        
+        # Создаем пользователя
+        user = User(
+            username=username,
+            email=email,
+            is_admin=is_admin,
+            coins=0,
+            points=0
+        )
+        user.set_password(password)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Пользователь успешно создан',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'is_admin': user.is_admin,
+                'coins': user.coins,
+                'points': user.points
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Ошибка при создании пользователя: {str(e)}'}), 500
+
+@app.route('/admin/users/<int:user_id>/update', methods=['POST'])
+@login_required
+def admin_update_user(user_id):
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+    
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        # Обновляем данные пользователя
+        username = request.form.get('username')
+        email = request.form.get('email')
+        is_admin = 'is_admin' in request.form
+        
+        # Валидация
+        if not all([username, email]):
+            return jsonify({'success': False, 'message': 'Все поля обязательны для заполнения'}), 400
+            
+        # Проверяем, существует ли другой пользователь с таким именем или email
+        existing_user = User.query.filter(
+            (User.id != user_id) & 
+            ((User.username == username) | (User.email == email))
+        ).first()
+        
+        if existing_user:
+            return jsonify({'success': False, 'message': 'Пользователь с таким именем или email уже существует'}), 400
+        
+        # Обновляем данные
+        user.username = username
+        user.email = email
+        user.is_admin = is_admin
+        
+        # Если указан новый пароль, обновляем его
+        new_password = request.form.get('new_password')
+        if new_password:
+            user.set_password(new_password)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Данные пользователя обновлены',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'is_admin': user.is_admin,
+                'coins': user.coins,
+                'points': user.points
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Ошибка при обновлении данных пользователя: {str(e)}'}), 500
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+def admin_delete_user(user_id):
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+    
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        # Нельзя удалить самого себя
+        if user.id == current_user.id:
+            return jsonify({'success': False, 'message': 'Вы не можете удалить самого себя'}), 400
+        
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Пользователь успешно удален'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Ошибка при удалении пользователя: {str(e)}'}), 500
+
+@app.route('/admin/users/<int:user_id>/reset_password', methods=['POST'])
+@login_required
+def admin_reset_password(user_id):
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+    
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        # Генерируем случайный пароль
+        import random
+        import string
+        new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+        
+        # Устанавливаем новый пароль
+        user.set_password(new_password)
+        db.session.commit()
+        
+        # В реальном приложении здесь должна быть отправка email с новым паролем
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Пароль успешно сброшен',
+            'new_password': new_password  # В реальном приложении не возвращаем пароль в ответе
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Ошибка при сбросе пароля: {str(e)}'}), 500
+
+@app.route('/update_user_avatar/<int:user_id>', methods=['POST'])
+@login_required
+def update_user_avatar(user_id):
+    # Проверяем права доступа
+    if not current_user.is_admin and current_user.id != user_id:
+        if request.is_json:
+            return jsonify({'error': 'Доступ запрещен'}), 403
+        flash('Доступ запрещен', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    user = User.query.get_or_404(user_id)
+    
+    # Проверяем, был ли отправлен файл
+    if 'avatar' not in request.files:
+        if request.is_json:
+            return jsonify({'error': 'Файл не выбран'}), 400
+        flash('Файл не выбран', 'danger')
+        return redirect(url_for('admin_users' if current_user.is_admin else 'dashboard'))
+    
+    file = request.files['avatar']
+    
+    # Если пользователь не выбрал файл, браузер может отправить пустой файл без имени
+    if file.filename == '':
+        if request.is_json:
+            return jsonify({'error': 'Файл не выбран'}), 400
+        flash('Файл не выбран', 'danger')
+        return redirect(url_for('admin_users' if current_user.is_admin else 'dashboard'))
+    
+    if not file or not allowed_file(file.filename):
+        if request.is_json:
+            return jsonify({'error': 'Недопустимый формат файла'}), 400
+        flash('Недопустимый формат файла. Разрешены только изображения (jpg, png, gif)', 'danger')
+        return redirect(url_for('admin_users' if current_user.is_admin else 'dashboard'))
+    
+    try:
+        # Удаляем старый аватар, если он не стандартный
+        if user.avatar and user.avatar != 'default_avatar.png':
+            try:
+                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], user.avatar))
+            except Exception as e:
+                app.logger.error(f'Ошибка при удалении старого аватара: {e}')
+        
+        # Сохраняем новый аватар
+        filename = save_file(file)
+        user.avatar = filename
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({'success': True, 'avatar_url': url_for('uploaded_file', filename=filename)})
+        
+        flash('Аватарка успешно обновлена', 'success')
+        return redirect(url_for('admin_users' if current_user.is_admin else 'dashboard'))
+            
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Ошибка при обновлении аватара: {e}')
+        if request.is_json:
+            return jsonify({'error': 'Ошибка при сохранении файла'}), 500
+        
+        flash('Ошибка при обновлении аватарки', 'danger')
+        return redirect(url_for('admin_users' if current_user.is_admin else 'dashboard'))
+    
+    if request.is_json:
+        return jsonify({'error': 'Недопустимый формат файла'}), 400
+    else:
+        flash('Недопустимый формат файла. Разрешены только изображения (jpg, png, gif)', 'danger')
+        return redirect(url_for('admin_users' if current_user.is_admin else 'dashboard'))
+
+# Обработка статических файлов
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# Функция для проверки разрешенных расширений файлов
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# Функция для сохранения загруженного файла с уникальным именем
+def save_file(file, folder='uploads'):
+    if file and allowed_file(file.filename):
+        # Создаем уникальное имя файла
+        filename = secure_filename(file.filename)
+        # Получаем расширение файла
+        ext = filename.rsplit('.', 1)[1].lower()
+        # Создаем уникальное имя файла с использованием UUID
+        unique_filename = f"{uuid.uuid4().hex}.{ext}"
+        # Полный путь для сохранения файла
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        # Сохраняем файл
+        file.save(file_path)
+        return unique_filename
+    return None
+
+# Функция для создания администратора
+def create_admin():
+    # Проверяем, существует ли уже администратор
+    admin = User.query.filter_by(username='admin').first()
+    if not admin:
+        admin = User(username='admin', email='admin@example.com')
+        admin.set_password('admin')
+        admin.is_admin = True
+        db.session.add(admin)
+        db.session.commit()
+        print('Admin user created successfully!')
+    else:
+        # Ensure the admin flag is set for the existing admin user
+        if not admin.is_admin:
+            admin.is_admin = True
+            db.session.commit()
+            print('Admin privileges added to existing user.')
+        else:
+            print('Admin user already exists.')
+
+
+
+def create_admin():
+    """Создает администратора"""
+    admin = User.query.filter_by(username='admin').first()
+    if not admin:
+        admin = User(username='admin', email='admin@example.com')
+        admin.set_password('admin')
+        admin.is_admin = True
+        db.session.add(admin)
+        db.session.commit()
+        print('Admin user created successfully!')
+    else:
+        # Ensure the admin flag is set for the existing admin user
+        if not admin.is_admin:
+            admin.is_admin = True
+            db.session.commit()
+            print('Admin privileges added to existing user.')
+        else:
+            print('Admin user already exists.')
+
+@app.cli.command('create-admin')
+def create_admin_command():
+    """CLI command to create an admin user"""
+    with app.app_context():
+        create_admin()
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)

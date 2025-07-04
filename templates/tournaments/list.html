@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Турниры{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Турниры</h1>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Активные турниры</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_tournaments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Название</th>
+                                        <th>Дата</th>
+                                        <th>Звезды</th>
+                                        <th>Участники</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tournament in active_tournaments %}
+                                    <tr>
+                                        <td>{{ tournament.name }}</td>
+                                        <td>{{ tournament.start_time.strftime('%d.%m.%Y') }}</td>
+                                        <td>
+                                            {% for i in range(tournament.stars) %}
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            {% endfor %}
+                                        </td>
+                                        <td>{{ tournament.results|length }}</td>
+                                        <td>
+                                            {% if tournament.registration_open %}
+                                                <span class="badge bg-success">Регистрация открыта</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Регистрация закрыта</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('tournaments.tournament_details', tournament_id=tournament.id) }}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-info-circle"></i> Подробнее
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Нет активных турниров</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Завершенные турниры</h5>
+                </div>
+                <div class="card-body">
+                    {% if completed_tournaments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Название</th>
+                                        <th>Дата</th>
+                                        <th>Звезды</th>
+                                        <th>Участники</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tournament in completed_tournaments %}
+                                    <tr>
+                                        <td>{{ tournament.name }}</td>
+                                        <td>{{ tournament.start_time.strftime('%d.%m.%Y') }}</td>
+                                        <td>
+                                            {% for i in range(tournament.stars) %}
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            {% endfor %}
+                                        </td>
+                                        <td>{{ tournament.results|length }}</td>
+                                        <td>
+                                            <a href="{{ url_for('tournaments.tournament_details', tournament_id=tournament.id) }}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-info-circle"></i> Результаты
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Нет завершенных турниров</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
